@@ -73,31 +73,53 @@ export default function SongGame({ game, session }: Props) {
 
   // 플레이어 생성
   useEffect(() => {
+    console.log('=== 플레이어 생성 시도 ===');
+    console.log('song:', song);
+    console.log('YouTube API 로드됨:', !!(window as any).YT);
+    console.log('playerRef.current:', playerRef.current);
+    console.log('모든 조건:', song && (window as any).YT && !playerRef.current);
+    
     if (song && (window as any).YT && !playerRef.current) {
-      console.log('플레이어 생성 시도:', song);
-      playerRef.current = new (window as any).YT.Player('youtube-player', {
-        height: '1', // 최소 크기 (0이면 소리 안남)
-        width: '1',
-        videoId: getVideoId(song.youtubeUrl),
-        playerVars: {
-          start: song.startTime || 0, // 시작 시간 적용
-          controls: 0,
-          autoplay: 0,
-        },
-        events: {
-          onReady: (_event: any) => {
-            console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
-            console.log('비디오 ID:', getVideoId(song.youtubeUrl));
+      console.log('✅ 플레이어 생성 조건 충족');
+      const videoId = getVideoId(song.youtubeUrl);
+      console.log('비디오 ID:', videoId);
+      
+      if (!videoId) {
+        console.error('❌ 비디오 ID를 추출할 수 없음:', song.youtubeUrl);
+        return;
+      }
+      
+      try {
+        playerRef.current = new (window as any).YT.Player('youtube-player', {
+          height: '1', // 최소 크기 (0이면 소리 안남)
+          width: '1',
+          videoId: videoId,
+          playerVars: {
+            start: song.startTime || 0, // 시작 시간 적용
+            controls: 0,
+            autoplay: 0,
           },
-          onStateChange: (event: any) => {
-            console.log('플레이어 상태 변경:', event.data);
-            // -1: 시작 안 됨, 0: 종료, 1: 재생 중, 2: 일시정지, 3: 버퍼링, 5: 동영상 신호
+          events: {
+            onReady: (_event: any) => {
+              console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
+            },
+            onStateChange: (event: any) => {
+              console.log('플레이어 상태 변경:', event.data);
+            },
+            onError: (event: any) => {
+              console.error('❌ 플레이어 에러:', event.data);
+            },
           },
-          onError: (event: any) => {
-            console.error('❌ 플레이어 에러:', event.data);
-          },
-        },
-      });
+        });
+        console.log('✅ 플레이어 객체 생성 완료');
+      } catch (error) {
+        console.error('❌ 플레이어 생성 실패:', error);
+      }
+    } else {
+      console.log('❌ 플레이어 생성 조건 미충족');
+      if (!song) console.log('  - song이 없음');
+      if (!(window as any).YT) console.log('  - YouTube API가 로드되지 않음');
+      if (playerRef.current) console.log('  - 플레이어가 이미 존재함');
     }
   }, [song]);
 

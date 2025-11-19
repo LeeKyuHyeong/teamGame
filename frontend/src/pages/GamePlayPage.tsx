@@ -13,7 +13,7 @@ export default function GamePlayPage() {
 
   const { data: session, isLoading: sessionLoading } = useQuery<Session>({
     queryKey: ['sessions', parseInt(sessionId || '0')],
-    queryFn: () => sessionsApi.getDetail(parseInt(sessionId || '0')),
+    queryFn: () => sessionsApi.getOne(parseInt(sessionId || '0')),
   });
 
   const { data: game, isLoading, error } = useQuery<SessionGame>({
