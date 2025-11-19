@@ -74,17 +74,27 @@ export default function SongGame({ game, session }: Props) {
   // 플레이어 생성
   useEffect(() => {
     if (song && (window as any).YT && !playerRef.current) {
+      console.log('플레이어 생성 시도:', song);
       playerRef.current = new (window as any).YT.Player('youtube-player', {
-        height: '100%',
-        width: '100%',
+        height: '1', // 최소 크기 (0이면 소리 안남)
+        width: '1',
         videoId: getVideoId(song.youtubeUrl),
         playerVars: {
-          start: song.startTime || 0,
+          start: song.startTime || 0, // 시작 시간 적용
           controls: 0,
+          autoplay: 0,
         },
         events: {
           onReady: (_event: any) => {
-            console.log('플레이어 준비 완료');
+            console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
+            console.log('비디오 ID:', getVideoId(song.youtubeUrl));
+          },
+          onStateChange: (event: any) => {
+            console.log('플레이어 상태 변경:', event.data);
+            // -1: 시작 안 됨, 0: 종료, 1: 재생 중, 2: 일시정지, 3: 버퍼링, 5: 동영상 신호
+          },
+          onError: (event: any) => {
+            console.error('❌ 플레이어 에러:', event.data);
           },
         },
       });
@@ -92,16 +102,25 @@ export default function SongGame({ game, session }: Props) {
   }, [song]);
 
   const handlePlay = () => {
+    console.log('재생 버튼 클릭');
+    console.log('플레이어:', playerRef.current);
     if (playerRef.current && playerRef.current.playVideo) {
+      console.log('✅ 재생 시작');
       playerRef.current.playVideo();
       setIsPlaying(true);
+    } else {
+      console.error('❌ 플레이어가 준비되지 않음');
     }
   };
 
   const handlePause = () => {
+    console.log('멈춤 버튼 클릭');
     if (playerRef.current && playerRef.current.pauseVideo) {
+      console.log('✅ 일시정지');
       playerRef.current.pauseVideo();
       setIsPlaying(false);
+    } else {
+      console.error('❌ 플레이어가 준비되지 않음');
     }
   };
 
@@ -151,6 +170,22 @@ export default function SongGame({ game, session }: Props) {
     ...(session?.teams?.[0]?.participants || []),
     ...(session?.teams?.[1]?.participants || []),
   ].filter((p) => !p.isMc);
+
+  // 디버깅 - 세션과 참가자 데이터 확인
+  useEffect(() => {
+    console.log('=== 세션 데이터 ===');
+    console.log('Session:', session);
+    console.log('Teams:', session?.teams);
+    if (session?.teams) {
+      session.teams.forEach((team, index) => {
+        console.log(`Team ${index}:`, team);
+        console.log(`  - teamName:`, team.teamName);
+        console.log(`  - totalScore:`, team.totalScore);
+        console.log(`  - participants:`, team.participants);
+      });
+    }
+    console.log('All Participants:', allParticipants);
+  }, [session, allParticipants]);
 
   if (isLoading) {
     return (
@@ -258,11 +293,26 @@ export default function SongGame({ game, session }: Props) {
 
       {/* 메인 콘텐츠 */}
       <div className="max-w-5xl mx-auto">
-        {/* YouTube 플레이어 */}
-        <div className="bg-black rounded-lg overflow-hidden mb-8">
-          <div className="aspect-video">
-            <div id="youtube-player"></div>
-          </div>
+        {/* YouTube 플레이어 (화면 밖 - 오디오만) */}
+        <div className="fixed -left-[9999px] -top-[9999px]">
+          <div id="youtube-player" style={{ width: '1px', height: '1px' }}></div>
+        </div>
+
+        {/* 오디오 표시 영역 */}
+        <div className="bg-gradient-to-br from-purple-900 to-blue-900 rounded-lg p-12 mb-8 text-center">
+          <div className="text-8xl mb-6">🎵</div>
+          <p className="text-3xl font-bold mb-4">음악이 재생됩니다</p>
+          {isPlaying ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-3 h-8 bg-green-400 animate-pulse rounded"></div>
+              <div className="w-3 h-12 bg-green-400 animate-pulse rounded" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-3 h-10 bg-green-400 animate-pulse rounded" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-3 h-14 bg-green-400 animate-pulse rounded" style={{ animationDelay: '0.3s' }}></div>
+              <div className="w-3 h-8 bg-green-400 animate-pulse rounded" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          ) : (
+            <p className="text-gray-400">재생 버튼을 눌러 시작하세요</p>
+          )}
         </div>
 
         {/* 정답 표시 */}
@@ -283,18 +333,18 @@ export default function SongGame({ game, session }: Props) {
 
         {/* 컨트롤 버튼 */}
         {!answered && (
-          <div className="flex space-x-4 mb-8">
+          <div className="grid grid-cols-2 gap-4 mb-8">
             <button
               onClick={handlePlay}
               disabled={isPlaying}
-              className="flex-1 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="py-6 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-2xl disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               ▶ 재생
             </button>
             <button
               onClick={handlePause}
               disabled={!isPlaying}
-              className="flex-1 py-4 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="py-6 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-2xl disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               ⏸ 멈춤
             </button>
@@ -303,8 +353,8 @@ export default function SongGame({ game, session }: Props) {
 
         {/* 참가자 목록 */}
         <div className="bg-gray-800 p-6 rounded-lg mb-8">
-          <h3 className="text-2xl font-bold mb-4">참가자 선택</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <h3 className="text-2xl font-bold mb-4">참가자를 선택하세요</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {allParticipants.map((participant) => (
               <button
                 key={participant.id}
@@ -312,25 +362,28 @@ export default function SongGame({ game, session }: Props) {
                 disabled={answered}
                 className={`p-4 rounded-lg font-semibold text-lg transition ${
                   winner?.id === participant.id
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-green-600 text-white ring-4 ring-green-400'
                     : answered
                     ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg'
                 }`}
               >
                 {participant.participantName}
               </button>
             ))}
           </div>
+          {allParticipants.length === 0 && (
+            <p className="text-center text-gray-400 py-4">참가자가 없습니다.</p>
+          )}
         </div>
 
         {/* 다음 라운드 버튼 */}
         {answered && (
           <button
             onClick={handleNextRound}
-            className="w-full py-6 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold text-2xl"
+            className="w-full py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-2xl shadow-lg transition"
           >
-            {currentRoundIndex < rounds.length - 1 ? '다음 라운드 →' : '게임 완료'}
+            {currentRoundIndex < rounds.length - 1 ? '다음 라운드 →' : '🎉 게임 완료'}
           </button>
         )}
       </div>

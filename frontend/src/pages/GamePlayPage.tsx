@@ -11,7 +11,7 @@ export default function GamePlayPage() {
   const { sessionId, gameId } = useParams();
   const navigate = useNavigate();
 
-  const { data: session } = useQuery<Session>({
+  const { data: session, isLoading: sessionLoading } = useQuery<Session>({
     queryKey: ['sessions', parseInt(sessionId || '0')],
     queryFn: () => sessionsApi.getDetail(parseInt(sessionId || '0')),
   });
@@ -21,10 +21,22 @@ export default function GamePlayPage() {
     queryFn: () => gamesApi.getOne(parseInt(gameId || '0')),
   });
 
-  if (isLoading) {
+  // 디버깅
+  console.log('=== GamePlayPage ===');
+  console.log('sessionId:', sessionId);
+  console.log('gameId:', gameId);
+  console.log('session 로딩:', sessionLoading);
+  console.log('session 데이터:', session);
+  console.log('game 데이터:', game);
+
+  if (isLoading || sessionLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="text-xl text-gray-600">로딩 중...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        <div className="text-center">
+          <div className="text-2xl mb-4">로딩 중...</div>
+          <p className="text-gray-400">세션: {sessionLoading ? '로딩 중' : '완료'}</p>
+          <p className="text-gray-400">게임: {isLoading ? '로딩 중' : '완료'}</p>
+        </div>
       </div>
     );
   }
