@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Team } from './team.entity';
+import { RoundScore } from './round-score.entity';
 
 @Entity('participants')
 export class Participant {
@@ -22,6 +24,9 @@ export class Participant {
   @Column({ type: 'boolean', default: false, name: 'is_mc' })
   isMc: boolean;
 
+  @Column({ type: 'int', default: 0, name: 'total_score' })
+  totalScore: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -31,4 +36,7 @@ export class Participant {
   })
   @JoinColumn({ name: 'team_id' })
   team: Team;
+
+  @OneToMany(() => RoundScore, (roundScore) => roundScore.participant)
+  roundScores: RoundScore[];
 }

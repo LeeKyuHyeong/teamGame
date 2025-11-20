@@ -14,12 +14,25 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MediaController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const multer_1 = require("multer");
+const path_1 = require("path");
 const media_service_1 = require("./media.service");
 const create_media_dto_1 = require("./dto/create-media.dto");
 let MediaController = class MediaController {
     mediaService;
     constructor(mediaService) {
         this.mediaService = mediaService;
+    }
+    async uploadImage(file, title) {
+        if (!file) {
+            throw new Error('No file uploaded');
+        }
+        const imageUrl = `/uploads/media/${file.filename}`;
+        return this.mediaService.create({
+            imageUrl,
+            title,
+        });
     }
     create(createMediaDto) {
         return this.mediaService.create(createMediaDto);
@@ -42,6 +55,32 @@ let MediaController = class MediaController {
     }
 };
 exports.MediaController = MediaController;
+__decorate([
+    (0, common_1.Post)('upload'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads/media',
+            filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                cb(null, `media-${uniqueSuffix}${(0, path_1.extname)(file.originalname)}`);
+            },
+        }),
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                return cb(new Error('Only image files are allowed!'), false);
+            }
+            cb(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+    })),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)('title')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], MediaController.prototype, "uploadImage", null);
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),

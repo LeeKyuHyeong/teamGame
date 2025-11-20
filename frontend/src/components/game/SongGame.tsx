@@ -13,7 +13,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const playerRef = useRef<any>(null);
-    
+  
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [answered, setAnswered] = useState(false);
@@ -35,10 +35,38 @@ export default function SongGame({ game, session: sessionProp }: Props) {
     queryFn: () => roundsApi.getByGame(game.id),
   });
 
-  const scoreMutation = useMutation({
+  const scoreMutation = useMutation({    
     mutationFn: scoresApi.assignScore,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', session?.id] });
+    onMutate: async (newScore) => {
+      await queryClient.cancelQueries({ queryKey: ['sessions', game.sessionId] });
+      console.log('scoreMuation');
+      const previousSession = queryClient.getQueryData(['sessions', game.sessionId]);
+      
+      queryClient.setQueryData(['sessions', game.sessionId], (old: Session | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          teams: old.teams?.map(team => ({
+            ...team,
+            participants: team.participants?.map(p => 
+              p.id === newScore.participantId 
+                ? { ...p, totalScore: (p.totalScore || 0) + newScore.score }
+                : p
+            ),
+          })),
+        };
+      });
+      
+      return { previousSession };
+    },
+    onError: (_err, _newScore, context) => {
+      if (context?.previousSession) {
+        queryClient.setQueryData(['sessions', game.sessionId], context.previousSession);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
     },
   });
 
@@ -54,6 +82,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   useEffect(() => {
     // 이미 로드되었는지 확인
     if ((window as any).YT && (window as any).YT.Player) {
+      console.log('✅ YouTube API 이미 로드됨');
       setYoutubeReady(true);
       return;
     }
@@ -61,8 +90,10 @@ export default function SongGame({ game, session: sessionProp }: Props) {
     // 이미 스크립트가 추가되었는지 확인
     const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
     if (existingScript) {
+      console.log('YouTube API 스크립트 이미 존재, 로딩 대기 중...');
       // 이미 있다면 콜백만 다시 설정
       (window as any).onYouTubeIframeAPIReady = () => {
+        console.log('✅ YouTube API Ready (재설정)');
         setYoutubeReady(true);
       };
       return;
@@ -75,6 +106,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
     firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
 
     (window as any).onYouTubeIframeAPIReady = () => {
+      console.log('✅ YouTube API Ready');
       setYoutubeReady(true);
     };
   }, []);
@@ -91,11 +123,24 @@ export default function SongGame({ game, session: sessionProp }: Props) {
 
   // 플레이어 생성
   useEffect(() => {
+    console.log('=== 플레이어 생성 시도 ===');
     
     // DOM 요소 확인
     const playerElement = document.getElementById('youtube-player');
+    console.log('DOM 요소 youtube-player:', playerElement);
+    console.log('DOM 요소가 존재하는가:', !!playerElement);
+    
+    console.log('song:', song);
+    console.log('song이 존재하는가:', !!song);
+    console.log('YouTube API 로드됨 (youtubeReady):', youtubeReady);
+    console.log('YouTube API 로드됨 (window.YT):', !!(window as any).YT);
+    console.log('YT 객체:', (window as any).YT);
+    console.log('playerRef.current:', playerRef.current);
+    console.log('playerRef.current가 null인가:', playerRef.current === null);
+    console.log('모든 조건 충족:', song && youtubeReady && !playerRef.current);
     
     if (song && youtubeReady && !playerRef.current) {
+      console.log('✅ 플레이어 생성 조건 충족');
       
       if (!playerElement) {
         console.error('❌ youtube-player DOM 요소를 찾을 수 없음!');
@@ -103,6 +148,8 @@ export default function SongGame({ game, session: sessionProp }: Props) {
       }
       
       const videoId = getVideoId(song.youtubeUrl);
+      console.log('비디오 ID:', videoId);
+      console.log('YouTube URL:', song.youtubeUrl);
       
       if (!videoId) {
         console.error('❌ 비디오 ID를 추출할 수 없음:', song.youtubeUrl);
@@ -110,6 +157,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
       }
       
       try {
+        console.log('플레이어 생성 중...');
         playerRef.current = new (window as any).YT.Player('youtube-player', {
           height: '1',
           width: '1',
@@ -123,14 +171,15 @@ export default function SongGame({ game, session: sessionProp }: Props) {
             onReady: (_event: any) => {
               console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
             },
-            onStateChange: (_event: any) => {
-              // console.log('플레이어 상태 변경:', event.data);
+            onStateChange: (event: any) => {
+              console.log('플레이어 상태 변경:', event.data);
             },
-            onError: (_event: any) => {
-              // console.error('❌ 플레이어 에러:', event.data);
+            onError: (event: any) => {
+              console.error('❌ 플레이어 에러:', event.data);
             },
           },
         });
+        console.log('✅ 플레이어 객체 생성 완료:', playerRef.current);
       } catch (error) {
         console.error('❌ 플레이어 생성 실패:', error);
       }
@@ -143,7 +192,10 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   }, [song, youtubeReady]);
 
   const handlePlay = () => {
+    console.log('재생 버튼 클릭');
+    console.log('플레이어:', playerRef.current);
     if (playerRef.current && playerRef.current.playVideo) {
+      console.log('✅ 재생 시작');
       playerRef.current.playVideo();
       setIsPlaying(true);
     } else {
@@ -152,7 +204,9 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   };
 
   const handlePause = () => {
+    console.log('멈춤 버튼 클릭');
     if (playerRef.current && playerRef.current.pauseVideo) {
+      console.log('✅ 일시정지');
       playerRef.current.pauseVideo();
       setIsPlaying(false);
     } else {
@@ -163,10 +217,10 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   const handleParticipantClick = (participant: Participant) => {
     if (answered || !currentRound) return;
 
-    // 점수 부여 (예: 10점)
     scoreMutation.mutate({
       roundId: Number(currentRound.id),
       teamId: Number(participant.teamId),
+      participantId: Number(participant.id),
       score: 10,
     });
 
@@ -206,6 +260,22 @@ export default function SongGame({ game, session: sessionProp }: Props) {
     ...(session?.teams?.[0]?.participants || []),
     ...(session?.teams?.[1]?.participants || []),
   ].filter((p) => !p.isMc);
+
+  // 디버깅 - 세션과 참가자 데이터 확인
+  useEffect(() => {
+    console.log('=== 세션 데이터 ===');
+    console.log('Session:', session);
+    console.log('Teams:', session?.teams);
+    if (session?.teams) {
+      session.teams.forEach((team, index) => {
+        console.log(`Team ${index}:`, team);
+        console.log(`  - teamName:`, team.teamName);
+        console.log(`  - totalScore:`, team.totalScore);
+        console.log(`  - participants:`, team.participants);
+      });
+    }
+    console.log('All Participants:', allParticipants);
+  }, [session, allParticipants]);
 
   if (isLoading) {
     return (
@@ -295,19 +365,25 @@ export default function SongGame({ game, session: sessionProp }: Props) {
 
         {/* 팀 점수판 */}
         <div className="grid grid-cols-2 gap-6 mb-8">
-          {session?.teams?.map((team) => (
-            <div
-              key={team.id}
-              className={`p-6 rounded-lg ${
-                team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">{team.teamName}</h3>
-                <div className="text-4xl font-bold">{team.totalScore}</div>
+          {session?.teams?.map((team) => {
+            const teamScore = team.participants
+              ?.filter(p => !p.isMc)
+              .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
+            
+            return (
+              <div
+                key={team.id}
+                className={`p-6 rounded-lg ${
+                  team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-bold">{team.teamName}</h3>
+                  <div className="text-4xl font-bold">{teamScore}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

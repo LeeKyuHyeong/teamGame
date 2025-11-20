@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { sessionsApi, gamesApi, songsApi } from '../api';
-import type { Session, Song } from '../types';
+import { sessionsApi, gamesApi, songsApi, mediaApi } from '../api';
+import type { MediaContent, Session, Song } from '../types';
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,12 +25,21 @@ export default function SessionDetailPage() {
     enabled: selectedGameType === 'SONG',
   });
 
+  // 드라마/영화 전체 개수 조회
+  const { data: mediaList } = useQuery<MediaContent[]>({
+    queryKey: ['media'],
+    queryFn: mediaApi.getAll,
+    enabled: selectedGameType === 'MEDIA',
+  });
+
   // 최대 라운드 수 설정
   useEffect(() => {
     if (selectedGameType === 'SONG' && songs) {
       setRoundCount(Math.min(5, songs.length));
+    } else if (selectedGameType === 'MEDIA' && mediaList) {
+      setRoundCount(Math.min(5, mediaList.length));
     }
-  }, [selectedGameType, songs]);
+  }, [selectedGameType, songs, mediaList]);
 
   const handleGameSelect = (gameCode: string) => {
     setSelectedGameType(gameCode);
@@ -53,28 +62,31 @@ export default function SessionDetailPage() {
         alert(`라운드 수는 1~${songs.length} 사이여야 합니다.`);
         return;
       }
-
-      try {
-        console.log('게임 시작:', selectedGameType, '라운드 수:', roundCount);
-
-        // 1. 게임 생성
-        const game = await gamesApi.create({
-          sessionId,
-          gameCode: selectedGameType,
-          gameOrder: (session?.sessionGames?.length || 0) + 1,
-        });
-
-        // 2. Backend에서 랜덤 선택하도록 roundCount만 전달
-        await gamesApi.start(game.id, { roundCount });
-
-        // 3. 게임 진행 화면으로 이동
-        navigate(`/sessions/${sessionId}/games/${game.id}`);
-      } catch (error) {
-        console.error('게임 시작 오류:', error);
-        alert('게임 시작에 실패했습니다. 콘솔을 확인해주세요.');
+    } else if (selectedGameType === 'MEDIA') {
+      if (!mediaList || mediaList.length === 0) {
+        alert('등록된 드라마/영화가 없습니다.');
+        return;
       }
-    } else {
-      alert('현재는 노래 맞추기만 지원합니다.');
+
+      if (roundCount <= 0 || roundCount > mediaList.length) {
+        alert(`라운드 수는 1~${mediaList.length} 사이여야 합니다.`);
+        return;
+      }
+    }
+
+    try {
+      const game = await gamesApi.create({
+        sessionId,
+        gameCode: selectedGameType,
+        gameOrder: (session?.sessionGames?.length || 0) + 1,
+      });
+
+      await gamesApi.start(game.id, { roundCount });
+
+      navigate(`/sessions/${sessionId}/games/${game.id}`);
+    } catch (error) {
+      console.error('게임 시작 오류:', error);
+      alert('게임 시작에 실패했습니다.');
     }
   };
 
@@ -137,46 +149,58 @@ export default function SessionDetailPage() {
 
       {/* 팀 정보 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {session.teams?.map((team) => (
-          <div key={team.id} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2
-                className={`text-2xl font-bold ${
-                  team.teamName === 'A팀' ? 'text-blue-600' : 'text-pink-600'
-                }`}
-              >
-                {team.teamName}
-              </h2>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-gray-900">
-                  {team.totalScore}
+        {session.teams?.map((team) => {
+          const teamScore = team.participants
+            ?.filter(p => !p.isMc)
+            .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
+          
+          return (
+            <div key={team.id} className="bg-white p-6 rounded-lg shadow">
+              <div className="flex justify-between items-center mb-4">
+                <h2
+                  className={`text-2xl font-bold ${
+                    team.teamName === 'A팀' ? 'text-blue-600' : 'text-pink-600'
+                  }`}
+                >
+                  {team.teamName}
+                </h2>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-gray-900">
+                    {teamScore}
+                  </div>
+                  <div className="text-sm text-gray-600">점</div>
                 </div>
-                <div className="text-sm text-gray-600">점</div>
+              </div>
+
+              <div className="mb-2 text-sm text-gray-600">
+                {team.teamType} • {team.participants?.filter(p => !p.isMc).length || 0}명
+              </div>
+
+              <div className="space-y-2">
+                {team.participants?.map((participant) => (
+                  <div
+                    key={participant.id}
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-700 font-medium">{participant.participantName}</span>
+                      {participant.isMc && (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                          MC
+                        </span>
+                      )}
+                    </div>
+                    {!participant.isMc && (
+                      <span className="text-sm font-semibold text-gray-900">
+                        {participant.totalScore || 0}점
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="mb-2 text-sm text-gray-600">
-              {team.teamType} • {team.participants?.length || 0}명
-            </div>
-
-            <div className="space-y-1">
-              {team.participants?.map((participant) => (
-                <div
-                  key={participant.id}
-                  className="flex items-center space-x-2 text-gray-700"
-                >
-                  <span className="text-gray-400">•</span>
-                  <span>{participant.participantName}</span>
-                  {participant.isMc && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                      MC
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 게임 선택 */}
@@ -195,12 +219,11 @@ export default function SessionDetailPage() {
                   <div className="font-semibold">노래 맞추기</div>
                 </button>
                 <button
-                  disabled
-                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                  onClick={() => handleGameSelect('MEDIA')}
+                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition"
                 >
                   <div className="text-4xl mb-2">🎬</div>
                   <div className="font-semibold">드라마/영화</div>
-                  <div className="text-xs text-gray-500">(준비 중)</div>
                 </button>
                 <button
                   disabled
@@ -296,10 +319,74 @@ export default function SessionDetailPage() {
                     </div>
                   </div>
                 )}
+
+                {selectedGameType === 'MEDIA' && (
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4">
+                      🎬 드라마/영화 맞추기 설정
+                    </h3>
+
+                    <div className="mb-6">
+                      <p className="text-gray-600 mb-2">
+                        등록된 콘텐츠: <span className="font-bold text-purple-600">{mediaList?.length || 0}개</span>
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        랜덤으로 선택됩니다
+                      </p>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        진행할 라운드 수
+                      </label>
+                      <input
+                        type="number"
+                        value={roundCount}
+                        onChange={(e) => setRoundCount(parseInt(e.target.value) || 1)}
+                        min={1}
+                        max={mediaList?.length || 1}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        1 ~ {mediaList?.length || 0} 사이의 숫자를 입력하세요
+                      </p>
+                    </div>
+
+                    {(!mediaList || mediaList.length === 0) && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <p className="text-yellow-800">
+                          등록된 드라마/영화가 없습니다.
+                          <Link to="/content" className="underline ml-2">
+                            콘텐츠 관리로 이동 →
+                          </Link>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => {
+                          setShowGameSelect(false);
+                          setSelectedGameType('');
+                        }}
+                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={handleStartGame}
+                        disabled={!mediaList || mediaList.length === 0}
+                        className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        게임 시작
+                      </button>
+                    </div>
+                  </div>
+                )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ) : (
+            ) : (
           <div className="text-center py-8 text-gray-600">
             세션이 완료되었습니다.
           </div>

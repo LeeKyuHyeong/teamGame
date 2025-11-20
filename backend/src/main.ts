@@ -1,17 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // CORS 설정
   app.enableCors({
-    origin: 'http://localhost:5173', // Vite 기본 포트
+    origin: 'http://localhost:5173',
     credentials: true,
   });
 
-  // 전역 Validation Pipe 설정
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -20,7 +20,10 @@ async function bootstrap() {
     }),
   );
 
-  // API prefix 설정
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;

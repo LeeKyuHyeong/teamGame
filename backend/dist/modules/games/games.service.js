@@ -20,16 +20,19 @@ const session_game_entity_1 = require("../../database/entities/session-game.enti
 const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
+const media_content_entity_1 = require("../../database/entities/media-content.entity");
 let GamesService = class GamesService {
     sessionGameRepository;
     gameTypeRepository;
     gameRoundRepository;
     songRepository;
-    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository) {
+    mediaRepository;
+    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository, mediaRepository) {
         this.sessionGameRepository = sessionGameRepository;
         this.gameTypeRepository = gameTypeRepository;
         this.gameRoundRepository = gameRoundRepository;
         this.songRepository = songRepository;
+        this.mediaRepository = mediaRepository;
     }
     async addGameToSession(createDto) {
         const gameType = await this.gameTypeRepository.findOne({
@@ -64,7 +67,11 @@ let GamesService = class GamesService {
         return game;
     }
     async startGame(id, startGameDto) {
+        console.log('[GamesService] startGame 호출');
+        console.log('  - gameId:', id);
+        console.log('  - startGameDto:', startGameDto);
         const game = await this.findOne(id);
+        console.log('  - game.gameType.gameCode:', game.gameType.gameCode);
         if (game.status !== session_game_entity_1.GameStatus.WAITING) {
             throw new common_1.BadRequestException('Game has already started or completed');
         }
@@ -79,12 +86,24 @@ let GamesService = class GamesService {
                 }
                 const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
                 contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
-                console.log(`[GamesService] 랜덤 선곡: ${contentIds.length}곡`);
+                console.log('  - 선택된 노래 IDs:', contentIds);
+            }
+            else if (game.gameType.gameCode === 'MEDIA') {
+                const allMedia = await this.mediaRepository.find();
+                console.log('  - 전체 미디어 개수:', allMedia.length);
+                console.log('  - 요청 라운드 수:', startGameDto.roundCount);
+                if (allMedia.length < startGameDto.roundCount) {
+                    throw new common_1.BadRequestException(`Not enough media. Requested: ${startGameDto.roundCount}, Available: ${allMedia.length}`);
+                }
+                const shuffled = [...allMedia].sort(() => Math.random() - 0.5);
+                contentIds = shuffled.slice(0, startGameDto.roundCount).map(media => media.id);
+                console.log('  - 선택된 미디어 IDs:', contentIds);
             }
         }
         else if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
             contentIds = startGameDto.contentIds;
         }
+        console.log('  - 최종 contentIds:', contentIds);
         if (contentIds.length > 0) {
             const rounds = [];
             for (let i = 0; i < contentIds.length; i++) {
@@ -97,8 +116,14 @@ let GamesService = class GamesService {
                 });
                 rounds.push(round);
             }
-            await this.gameRoundRepository.save(rounds);
-            console.log(`[GamesService] ${rounds.length}개 라운드 생성 완료`);
+            const savedRounds = await this.gameRoundRepository.save(rounds);
+            console.log('  - 생성된 라운드 수:', savedRounds.length);
+            savedRounds.forEach((r, idx) => {
+                console.log(`    Round ${idx + 1}: id=${r.id}, contentId=${r.contentId}, contentType=${r.contentType}`);
+            });
+        }
+        else {
+            console.log('  ⚠️ contentIds가 비어있음!');
         }
         return await this.findOne(id);
     }
@@ -125,7 +150,9 @@ exports.GamesService = GamesService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(game_type_entity_1.GameType)),
     __param(2, (0, typeorm_1.InjectRepository)(game_round_entity_1.GameRound)),
     __param(3, (0, typeorm_1.InjectRepository)(song_entity_1.Song)),
+    __param(4, (0, typeorm_1.InjectRepository)(media_content_entity_1.MediaContent)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])

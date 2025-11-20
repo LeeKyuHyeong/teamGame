@@ -7,6 +7,10 @@ export class AssignScoreDto {
   @IsInt()
   teamId: number;
 
+  @IsOptional()
+  @IsInt()
+  participantId?: number;
+
   @IsInt()
   @Min(0)
   score: number;
@@ -14,5 +18,5 @@ export class AssignScoreDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  correctCount?: number; // 스피드/동작 게임용
+  correctCount?: number;
 }

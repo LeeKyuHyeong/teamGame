@@ -18,7 +18,7 @@ var MediaType;
 })(MediaType || (exports.MediaType = MediaType = {}));
 let MediaContent = class MediaContent {
     id;
-    imagePath;
+    imageUrl;
     title;
     mediaType;
     description;
@@ -31,15 +31,15 @@ __decorate([
     __metadata("design:type", Number)
 ], MediaContent.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 255, name: 'image_path' }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 255, name: 'image_url' }),
     __metadata("design:type", String)
-], MediaContent.prototype, "imagePath", void 0);
+], MediaContent.prototype, "imageUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100 }),
     __metadata("design:type", String)
 ], MediaContent.prototype, "title", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: MediaType, name: 'media_type' }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: MediaType, name: 'media_type', nullable: true }),
     __metadata("design:type", String)
 ], MediaContent.prototype, "mediaType", void 0);
 __decorate([

@@ -16,13 +16,13 @@ export class MediaContent {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: number;
 
-  @Column({ type: 'varchar', length: 255, name: 'image_path' })
-  imagePath: string;
+  @Column({ type: 'varchar', length: 255, name: 'image_url' })
+  imageUrl: string;
 
   @Column({ type: 'varchar', length: 100 })
   title: string;
 
-  @Column({ type: 'enum', enum: MediaType, name: 'media_type' })
+  @Column({ type: 'enum', enum: MediaType, name: 'media_type', nullable: true })
   mediaType: MediaType;
 
   @Column({ type: 'text', nullable: true })

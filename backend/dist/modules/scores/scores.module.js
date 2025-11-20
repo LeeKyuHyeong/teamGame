@@ -13,12 +13,13 @@ const scores_service_1 = require("./scores.service");
 const scores_controller_1 = require("./scores.controller");
 const round_score_entity_1 = require("../../database/entities/round-score.entity");
 const team_entity_1 = require("../../database/entities/team.entity");
+const participant_entity_1 = require("../../database/entities/participant.entity");
 let ScoresModule = class ScoresModule {
 };
 exports.ScoresModule = ScoresModule;
 exports.ScoresModule = ScoresModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([round_score_entity_1.RoundScore, team_entity_1.Team])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([round_score_entity_1.RoundScore, team_entity_1.Team, participant_entity_1.Participant])],
         controllers: [scores_controller_1.ScoresController],
         providers: [scores_service_1.ScoresService],
         exports: [scores_service_1.ScoresService],

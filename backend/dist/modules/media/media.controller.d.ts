@@ -3,6 +3,7 @@ import { CreateMediaDto } from './dto/create-media.dto';
 export declare class MediaController {
     private readonly mediaService;
     constructor(mediaService: MediaService);
+    uploadImage(file: Express.Multer.File, title: string): Promise<import("../../database/entities/media-content.entity").MediaContent>;
     create(createMediaDto: CreateMediaDto): Promise<import("../../database/entities/media-content.entity").MediaContent>;
     findAll(random?: string): Promise<import("../../database/entities/media-content.entity").MediaContent[]>;
     findOne(id: string): Promise<import("../../database/entities/media-content.entity").MediaContent>;

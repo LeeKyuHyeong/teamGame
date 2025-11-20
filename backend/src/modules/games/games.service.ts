@@ -5,6 +5,7 @@ import { SessionGame, GameStatus } from '../../database/entities/session-game.en
 import { GameType } from '../../database/entities/game-type.entity';
 import { GameRound } from '../../database/entities/game-round.entity';
 import { Song } from '../../database/entities/song.entity';
+import { MediaContent } from '../../database/entities/media-content.entity';
 import { CreateSessionGameDto } from './dto/create-session-game.dto';
 import { StartGameDto } from './dto/start-game.dto';
 
@@ -19,6 +20,8 @@ export class GamesService {
     private readonly gameRoundRepository: Repository<GameRound>,
     @InjectRepository(Song)
     private readonly songRepository: Repository<Song>,
+    @InjectRepository(MediaContent)
+    private readonly mediaRepository: Repository<MediaContent>,
   ) {}
 
   // 게임 추가 (세션에 게임 등록)
@@ -66,19 +69,22 @@ export class GamesService {
 
   // 게임 시작
   async startGame(id: number, startGameDto: StartGameDto): Promise<SessionGame> {
+    console.log('[GamesService] startGame 호출');
+    console.log('  - gameId:', id);
+    console.log('  - startGameDto:', startGameDto);
+    
     const game = await this.findOne(id);
+    console.log('  - game.gameType.gameCode:', game.gameType.gameCode);
 
     if (game.status !== GameStatus.WAITING) {
       throw new BadRequestException('Game has already started or completed');
     }
 
-    // 게임 상태를 진행중으로 변경
     game.status = GameStatus.IN_PROGRESS;
     await this.sessionGameRepository.save(game);
 
     let contentIds: number[] = [];
 
-    // roundCount가 제공된 경우 랜덤 선택
     if (startGameDto.roundCount) {
       if (game.gameType.gameCode === 'SONG') {
         const allSongs = await this.songRepository.find();
@@ -89,19 +95,31 @@ export class GamesService {
           );
         }
 
-        // 랜덤 셔플
         const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
         contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
+        console.log('  - 선택된 노래 IDs:', contentIds);
+      } else if (game.gameType.gameCode === 'MEDIA') {
+        const allMedia = await this.mediaRepository.find();
+        console.log('  - 전체 미디어 개수:', allMedia.length);
+        console.log('  - 요청 라운드 수:', startGameDto.roundCount);
         
-        console.log(`[GamesService] 랜덤 선곡: ${contentIds.length}곡`);
+        if (allMedia.length < startGameDto.roundCount) {
+          throw new BadRequestException(
+            `Not enough media. Requested: ${startGameDto.roundCount}, Available: ${allMedia.length}`
+          );
+        }
+
+        const shuffled = [...allMedia].sort(() => Math.random() - 0.5);
+        contentIds = shuffled.slice(0, startGameDto.roundCount).map(media => media.id);
+        console.log('  - 선택된 미디어 IDs:', contentIds);
       }
     } 
-    // contentIds가 직접 제공된 경우
     else if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
       contentIds = startGameDto.contentIds;
     }
 
-    // 라운드 생성
+    console.log('  - 최종 contentIds:', contentIds);
+
     if (contentIds.length > 0) {
       const rounds: GameRound[] = [];
       
@@ -116,8 +134,13 @@ export class GamesService {
         rounds.push(round);
       }
 
-      await this.gameRoundRepository.save(rounds);
-      console.log(`[GamesService] ${rounds.length}개 라운드 생성 완료`);
+      const savedRounds = await this.gameRoundRepository.save(rounds);
+      console.log('  - 생성된 라운드 수:', savedRounds.length);
+      savedRounds.forEach((r, idx) => {
+        console.log(`    Round ${idx + 1}: id=${r.id}, contentId=${r.contentId}, contentType=${r.contentType}`);
+      });
+    } else {
+      console.log('  ⚠️ contentIds가 비어있음!');
     }
 
     return await this.findOne(id);

@@ -12,13 +12,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Participant = void 0;
 const typeorm_1 = require("typeorm");
 const team_entity_1 = require("./team.entity");
+const round_score_entity_1 = require("./round-score.entity");
 let Participant = class Participant {
     id;
     teamId;
     participantName;
     isMc;
+    totalScore;
     createdAt;
     team;
+    roundScores;
 };
 exports.Participant = Participant;
 __decorate([
@@ -38,6 +41,10 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Participant.prototype, "isMc", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'int', default: 0, name: 'total_score' }),
+    __metadata("design:type", Number)
+], Participant.prototype, "totalScore", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], Participant.prototype, "createdAt", void 0);
@@ -48,6 +55,10 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: 'team_id' }),
     __metadata("design:type", team_entity_1.Team)
 ], Participant.prototype, "team", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => round_score_entity_1.RoundScore, (roundScore) => roundScore.participant),
+    __metadata("design:type", Array)
+], Participant.prototype, "roundScores", void 0);
 exports.Participant = Participant = __decorate([
     (0, typeorm_1.Entity)('participants')
 ], Participant);

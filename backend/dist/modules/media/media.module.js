@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MediaModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const platform_express_1 = require("@nestjs/platform-express");
 const media_service_1 = require("./media.service");
 const media_controller_1 = require("./media.controller");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
@@ -17,7 +18,12 @@ let MediaModule = class MediaModule {
 exports.MediaModule = MediaModule;
 exports.MediaModule = MediaModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([media_content_entity_1.MediaContent])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([media_content_entity_1.MediaContent]),
+            platform_express_1.MulterModule.register({
+                dest: './uploads/media',
+            }),
+        ],
         controllers: [media_controller_1.MediaController],
         providers: [media_service_1.MediaService],
         exports: [media_service_1.MediaService],

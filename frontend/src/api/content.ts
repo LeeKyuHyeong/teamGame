@@ -33,6 +33,18 @@ export const mediaApi = {
     const response = await apiClient.post<MediaContent>('/media', data);
     return response.data;
   },
+  uploadImage: async (file: File, title: string): Promise<MediaContent> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', title);
+    
+    const response = await apiClient.post<MediaContent>('/media/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
   update: async (id: number, data: Partial<CreateMediaDto>): Promise<MediaContent> => {
     const response = await apiClient.patch<MediaContent>(`/media/${id}`, data);
     return response.data;

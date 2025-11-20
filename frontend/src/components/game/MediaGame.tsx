@@ -1,59 +1,158 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { roundsApi, scoresApi } from '../../api';
-import type { SessionGame, Session, GameRound } from '../../types';
+import { roundsApi, scoresApi, gamesApi, sessionsApi } from '../../api';
+import type { SessionGame, Session, GameRound, Participant } from '../../types';
 
 interface Props {
   game: SessionGame;
   session?: Session;
 }
 
-export default function MediaGame({ game, session }: Props) {
+export default function MediaGame({ game, session: sessionProp }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentRound, setCurrentRound] = useState<GameRound | null>(null);
-  const [scoreInputs, setScoreInputs] = useState<{ [teamId: number]: number }>({});
 
-  const { data: rounds } = useQuery<GameRound[]>({
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
+  const [answered, setAnswered] = useState(false);
+  const [winner, setWinner] = useState<Participant | null>(null);
+
+  const { data: sessionFromQuery } = useQuery<Session>({
+    queryKey: ['sessions', game.sessionId],
+    queryFn: () => sessionsApi.getOne(game.sessionId),
+    enabled: !!game.sessionId,
+  });
+
+  const session = sessionProp || sessionFromQuery;
+
+  const { data: rounds, isLoading, error } = useQuery<GameRound[]>({
     queryKey: ['rounds', game.id],
     queryFn: () => roundsApi.getByGame(game.id),
   });
 
   useEffect(() => {
-    if (rounds && rounds.length > 0) {
-      const nextRound = rounds.find((r) => !r.isAnswerRevealed) || rounds[rounds.length - 1];
-      setCurrentRound(nextRound);
-    }
-  }, [rounds]);
+    console.log('=== MediaGame 초기 데이터 ===');
+    console.log('game:', game);
+    console.log('game.id:', game.id);
+    console.log('game.gameType:', game.gameType);
+    console.log('isLoading:', isLoading);
+    console.log('error:', error);
+  }, [game, isLoading, error]);
 
-  const revealMutation = useMutation({
-    mutationFn: (reveal: boolean) => roundsApi.revealAnswer(currentRound!.id, reveal),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rounds', game.id] });
-    },
-  });
+  useEffect(() => {
+    console.log('=== Rounds 데이터 상세 ===');
+    console.log('Rounds 데이터:', rounds);
+    console.log('Rounds 타입:', Array.isArray(rounds));
+    console.log('Rounds 길이:', rounds?.length);
+    console.log('현재 라운드 인덱스:', currentRoundIndex);
+    
+    if (rounds && rounds.length > 0) {
+      console.log('전체 rounds:', rounds);
+      console.log('현재 라운드:', rounds[currentRoundIndex]);
+      console.log('현재 라운드 content:', rounds[currentRoundIndex]?.content);
+      
+      const currentRound = rounds[currentRoundIndex];
+      if (currentRound) {
+        console.log('currentRound.id:', currentRound.id);
+        console.log('currentRound.contentId:', currentRound.contentId);
+        console.log('currentRound.contentType:', currentRound.contentType);
+        console.log('currentRound.content:', currentRound.content);
+        
+        if (currentRound.content) {
+          console.log('content.id:', currentRound.content.id);
+          console.log('content.imageUrl:', currentRound.content.imageUrl);
+          console.log('content.title:', currentRound.content.title);
+        }
+      }
+    }
+  }, [rounds, currentRoundIndex]);
 
   const scoreMutation = useMutation({
     mutationFn: scoresApi.assignScore,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', session?.id] });
-      setScoreInputs({});
+    onMutate: async (newScore) => {
+      await queryClient.cancelQueries({ queryKey: ['sessions', game.sessionId] });
+      
+      const previousSession = queryClient.getQueryData(['sessions', game.sessionId]);
+      
+      queryClient.setQueryData(['sessions', game.sessionId], (old: Session | undefined) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          teams: old.teams?.map(team => ({
+            ...team,
+            participants: team.participants?.map(p => 
+              p.id === newScore.participantId 
+                ? { ...p, totalScore: (p.totalScore || 0) + newScore.score }
+                : p
+            ),
+          })),
+        };
+      });
+      
+      return { previousSession };
+    },
+    onError: (_err, _newScore, context) => {
+      if (context?.previousSession) {
+        queryClient.setQueryData(['sessions', game.sessionId], context.previousSession);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
     },
   });
 
-  const handleScoreSubmit = (teamId: number) => {
-    if (!currentRound || !scoreInputs[teamId]) return;
+  const completeGameMutation = useMutation({
+    mutationFn: () => gamesApi.complete(game.id),
+    onSuccess: () => {
+      alert('게임이 종료되었습니다!');
+      navigate(`/sessions/${session?.id}`);
+    },
+  });
+
+  const currentRound = rounds?.[currentRoundIndex];
+  const media = currentRound?.content;
+
+  const handleParticipantClick = (participant: Participant) => {
+    if (answered || !currentRound) return;
+
     scoreMutation.mutate({
-      roundId: currentRound.id,
-      teamId,
-      score: scoreInputs[teamId],
+      roundId: Number(currentRound.id),
+      teamId: Number(participant.teamId),
+      participantId: Number(participant.id),
+      score: 10,
     });
+
+    setAnswered(true);
+    setWinner(participant);
   };
 
-  if (!currentRound || !currentRound.content) {
+  const handleNextRound = () => {
+    if (!rounds) return;
+
+    if (currentRoundIndex < rounds.length - 1) {
+      setCurrentRoundIndex(currentRoundIndex + 1);
+      setAnswered(false);
+      setWinner(null);
+    } else {
+      completeGameMutation.mutate();
+    }
+  };
+
+  const handleEndGame = () => {
+    if (confirm('정말 게임을 종료하시겠습니까?')) {
+      completeGameMutation.mutate();
+    }
+  };
+
+  const allParticipants = [
+    ...(session?.teams?.[0]?.participants || []),
+    ...(session?.teams?.[1]?.participants || []),
+  ].filter((p) => !p.isMc);
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-white">
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
         <div className="text-center">
           <p className="text-2xl mb-4">라운드 정보를 불러오는 중...</p>
         </div>
@@ -61,133 +160,142 @@ export default function MediaGame({ game, session }: Props) {
     );
   }
 
-  const media = currentRound.content;
-
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      {/* 헤더 */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">🎬 드라마/영화 맞추기</h1>
-            <p className="text-gray-400">
-              라운드 {currentRound.roundNumber} / {rounds?.length}
-            </p>
-          </div>
+  if (!rounds || rounds.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        <div className="text-center">
+          <p className="text-2xl mb-4 text-red-500">라운드가 생성되지 않았습니다.</p>
           <button
             onClick={() => navigate(`/sessions/${session?.id}`)}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg"
           >
-            ← 세션으로
+            ← 세션으로 돌아가기
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {/* 팀 점수판 */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
-          {session?.teams?.map((team) => (
-            <div
-              key={team.id}
-              className={`p-6 rounded-lg ${
-                team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
-              }`}
+  if (!media) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        <div className="text-center">
+          <p className="text-2xl mb-4 text-red-500">콘텐츠를 불러올 수 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-4xl font-bold mb-2">🎬 드라마/영화 맞추기</h2>
+            <p className="text-xl text-gray-300">
+              라운드 {currentRoundIndex + 1} / {rounds.length}
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleEndGame}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">{team.teamName}</h3>
-                <div className="text-4xl font-bold">{team.totalScore}</div>
+              종료
+            </button>
+            <button
+              onClick={() => navigate(`/sessions/${session?.id}`)}
+              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg"
+            >
+              ← 세션으로
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          {session?.teams?.map((team) => {
+            const teamScore = team.participants
+              ?.filter(p => !p.isMc)
+              .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
+            
+            return (
+              <div
+                key={team.id}
+                className={`p-6 rounded-lg ${
+                  team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-bold">{team.teamName}</h3>
+                  <div className="text-4xl font-bold">{teamScore}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* 메인 콘텐츠 */}
-      <div className="max-w-4xl mx-auto">
-        {/* 이미지 표시 */}
-        <div className="bg-black rounded-lg overflow-hidden mb-8">
-          <div className="aspect-video flex items-center justify-center bg-gray-800">
-            <div className="text-6xl">🖼️</div>
-            <p className="text-gray-400 ml-4">이미지: {media.imagePath}</p>
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-gray-800 rounded-lg p-8 mb-8">
+          <div className="flex justify-center mb-6">
+            <img
+              src={`http://localhost:3000${media.imageUrl}`}
+              alt="장면"
+              className="max-w-full max-h-96 rounded-lg shadow-lg"
+              onError={(e) => {
+                e.currentTarget.src = 'https://via.placeholder.com/800x450?text=Image+Not+Found';
+              }}
+            />
           </div>
-        </div>
 
-        {/* 정답 표시 */}
-        {currentRound.isAnswerRevealed ? (
-          <div className="bg-green-900 p-8 rounded-lg mb-8 text-center">
-            <p className="text-3xl font-bold mb-2">{media.title}</p>
-            <p className="text-xl text-green-300">{media.mediaType}</p>
-            {media.description && (
-              <p className="text-gray-300 mt-4">{media.description}</p>
-            )}
-          </div>
-        ) : (
-          <div className="bg-gray-800 p-8 rounded-lg mb-8 text-center">
-            <p className="text-2xl text-gray-400">정답이 숨겨져 있습니다</p>
-          </div>
-        )}
-
-        {/* 컨트롤 */}
-        <div className="space-y-4">
-          <button
-            onClick={() => revealMutation.mutate(!currentRound.isAnswerRevealed)}
-            className={`w-full py-4 rounded-lg font-bold text-lg ${
-              currentRound.isAnswerRevealed
-                ? 'bg-gray-700 hover:bg-gray-600'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            {currentRound.isAnswerRevealed ? '정답 숨기기' : '정답 공개'}
-          </button>
-
-          {/* 점수 입력 */}
-          {currentRound.isAnswerRevealed && (
-            <div className="bg-gray-800 p-6 rounded-lg space-y-4">
-              <h3 className="text-xl font-bold mb-4">점수 부여</h3>
-              {session?.teams?.map((team) => (
-                <div key={team.id} className="flex items-center space-x-4">
-                  <span className="w-24 font-semibold">{team.teamName}</span>
-                  <input
-                    type="number"
-                    value={scoreInputs[team.id] || ''}
-                    onChange={(e) =>
-                      setScoreInputs({
-                        ...scoreInputs,
-                        [team.id]: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="flex-1 px-4 py-2 bg-gray-700 rounded-lg text-white"
-                    placeholder="점수 입력"
-                    min="0"
-                  />
-                  <button
-                    onClick={() => handleScoreSubmit(team.id)}
-                    disabled={!scoreInputs[team.id]}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    부여
-                  </button>
-                </div>
-              ))}
+          {answered && winner ? (
+            <div className="bg-green-900 p-8 rounded-lg text-center animate-pulse">
+              <p className="text-5xl font-bold mb-4">정답!</p>
+              <p className="text-3xl mb-4">{media.title}</p>
+              <p className="text-xl">
+                🎉 <span className="font-bold">{winner.participantName}</span>님이 맞췄습니다!
+              </p>
+            </div>
+          ) : (
+            <div className="bg-gray-700 p-8 rounded-lg text-center">
+              <p className="text-3xl text-gray-300">이 장면은 어떤 드라마/영화일까요?</p>
             </div>
           )}
+        </div>
 
-          {/* 다음 라운드 */}
-          {currentRound.isAnswerRevealed && (
-            <button
-              onClick={() => {
-                const currentIndex = rounds?.findIndex((r) => r.id === currentRound.id) || 0;
-                if (rounds && currentIndex < rounds.length - 1) {
-                  setCurrentRound(rounds[currentIndex + 1]);
-                  setScoreInputs({});
-                } else {
-                  alert('마지막 라운드입니다!');
-                }
-              }}
-              className="w-full py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold text-lg"
-            >
-              다음 라운드 →
-            </button>
+        <div className="bg-gray-800 p-6 rounded-lg mb-8">
+          <h3 className="text-2xl font-bold mb-4">참가자를 선택하세요</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {allParticipants.map((participant) => (
+              <button
+                key={participant.id}
+                onClick={() => handleParticipantClick(participant)}
+                disabled={answered}
+                className={`p-4 rounded-lg font-semibold text-lg transition ${
+                  winner?.id === participant.id
+                    ? 'bg-green-600 text-white ring-4 ring-green-400'
+                    : answered
+                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg'
+                }`}
+              >
+                {participant.participantName}
+              </button>
+            ))}
+          </div>
+          {allParticipants.length === 0 && (
+            <p className="text-center text-gray-400 py-4">참가자가 없습니다.</p>
           )}
         </div>
+
+        {answered && (
+          <button
+            onClick={handleNextRound}
+            className="w-full py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-2xl shadow-lg transition"
+          >
+            {currentRoundIndex < rounds.length - 1 ? '다음 라운드 →' : '🎉 게임 완료'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { GameRound } from './game-round.entity';
 import { Team } from './team.entity';
+import { Participant } from './participant.entity';
 
 @Entity('round_scores')
 @Unique(['roundId', 'teamId'])
@@ -21,6 +22,9 @@ export class RoundScore {
 
   @Column({ type: 'bigint', name: 'team_id' })
   teamId: number;
+
+  @Column({ type: 'bigint', name: 'participant_id', nullable: true })
+  participantId: number;
 
   @Column({ type: 'int', default: 0 })
   score: number;
@@ -43,4 +47,10 @@ export class RoundScore {
   })
   @JoinColumn({ name: 'team_id' })
   team: Team;
+
+  @ManyToOne(() => Participant, (participant) => participant.roundScores, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'participant_id' })
+  participant: Participant;
 }

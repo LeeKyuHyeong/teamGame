@@ -1,7 +1,7 @@
 import { MediaType } from '../../../database/entities/media-content.entity';
 export declare class CreateMediaDto {
-    imagePath: string;
+    imageUrl: string;
     title: string;
-    mediaType: MediaType;
+    mediaType?: MediaType;
     description?: string;
 }

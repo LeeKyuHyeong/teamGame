@@ -10,4 +10,8 @@ export class UpdateScoreDto {
   @IsInt()
   @Min(0)
   correctCount?: number;
+
+  @IsOptional()
+  @IsInt()
+  participantId?: number;
 }

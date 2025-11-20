@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class AssignScoreDto {
     roundId;
     teamId;
+    participantId;
     score;
     correctCount;
 }
@@ -26,6 +27,11 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     __metadata("design:type", Number)
 ], AssignScoreDto.prototype, "teamId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    __metadata("design:type", Number)
+], AssignScoreDto.prototype, "participantId", void 0);
 __decorate([
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(0),

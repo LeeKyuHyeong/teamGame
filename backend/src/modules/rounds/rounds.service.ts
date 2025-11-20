@@ -32,10 +32,17 @@ export class RoundsService {
 
   // 게임의 모든 라운드 조회 (콘텐츠 포함)
   async findByGame(sessionGameId: number): Promise<any[]> {
+    console.log('[RoundsService] findByGame 호출, sessionGameId:', sessionGameId);
+    
     const rounds = await this.roundRepository.find({
       where: { sessionGameId },
       relations: ['roundScores', 'roundScores.team'],
       order: { roundNumber: 'ASC' },
+    });
+
+    console.log('  - 조회된 라운드 수:', rounds.length);
+    rounds.forEach(r => {
+      console.log(`    Round ${r.roundNumber}: id=${r.id}, contentType=${r.contentType}, contentId=${r.contentId}`);
     });
 
     // 각 라운드에 콘텐츠 추가
@@ -48,22 +55,26 @@ export class RoundsService {
             content = await this.songRepository.findOne({
               where: { id: round.contentId },
             });
+            console.log(`    - SONG content found:`, !!content);
             break;
           case 'MEDIA':
             content = await this.mediaRepository.findOne({
               where: { id: round.contentId },
             });
+            console.log(`    - MEDIA content found:`, !!content, content ? `(id=${content.id}, title=${content.title})` : '');
             break;
           case 'SPEED':
             content = await this.speedCategoryRepository.findOne({
               where: { id: round.contentId },
               relations: ['items'],
             });
+            console.log(`    - SPEED content found:`, !!content);
             break;
           case 'ACTION':
             content = await this.actionRepository.findOne({
               where: { id: round.contentId },
             });
+            console.log(`    - ACTION content found:`, !!content);
             break;
         }
 
@@ -74,6 +85,7 @@ export class RoundsService {
       }),
     );
 
+    console.log('  - 콘텐츠 포함된 라운드 수:', roundsWithContent.length);
     return roundsWithContent;
   }
 

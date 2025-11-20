@@ -13,15 +13,18 @@ exports.RoundScore = void 0;
 const typeorm_1 = require("typeorm");
 const game_round_entity_1 = require("./game-round.entity");
 const team_entity_1 = require("./team.entity");
+const participant_entity_1 = require("./participant.entity");
 let RoundScore = class RoundScore {
     id;
     roundId;
     teamId;
+    participantId;
     score;
     correctCount;
     createdAt;
     round;
     team;
+    participant;
 };
 exports.RoundScore = RoundScore;
 __decorate([
@@ -36,6 +39,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'bigint', name: 'team_id' }),
     __metadata("design:type", Number)
 ], RoundScore.prototype, "teamId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'bigint', name: 'participant_id', nullable: true }),
+    __metadata("design:type", Number)
+], RoundScore.prototype, "participantId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'int', default: 0 }),
     __metadata("design:type", Number)
@@ -62,6 +69,13 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: 'team_id' }),
     __metadata("design:type", team_entity_1.Team)
 ], RoundScore.prototype, "team", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => participant_entity_1.Participant, (participant) => participant.roundScores, {
+        onDelete: 'CASCADE',
+    }),
+    (0, typeorm_1.JoinColumn)({ name: 'participant_id' }),
+    __metadata("design:type", participant_entity_1.Participant)
+], RoundScore.prototype, "participant", void 0);
 exports.RoundScore = RoundScore = __decorate([
     (0, typeorm_1.Entity)('round_scores'),
     (0, typeorm_1.Unique)(['roundId', 'teamId'])

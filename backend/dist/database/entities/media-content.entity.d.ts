@@ -4,7 +4,7 @@ export declare enum MediaType {
 }
 export declare class MediaContent {
     id: number;
-    imagePath: string;
+    imageUrl: string;
     title: string;
     mediaType: MediaType;
     description: string;

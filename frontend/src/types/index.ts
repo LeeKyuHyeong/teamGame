@@ -63,6 +63,7 @@ export interface Participant {
   isMc: boolean;
   createdAt: string;
   team?: Team;
+  totalScore: number;
 }
 
 export interface CreateParticipantDto {
@@ -104,6 +105,7 @@ export interface CreateSessionGameDto {
 
 export interface StartGameDto {
   contentIds?: number[];
+  roundCount?: number;
 }
 
 // Round Types
@@ -132,6 +134,7 @@ export interface RoundScore {
 export interface AssignScoreDto {
   roundId: number;
   teamId: number;
+  participantId: number;
   score: number;
   correctCount?: number;
 }
@@ -160,6 +163,7 @@ export enum MediaType {
 }
 
 export interface MediaContent {
+  imageUrl: any;
   id: number;
   imagePath: string;
   title: string;
@@ -171,6 +175,7 @@ export interface MediaContent {
 
 export interface CreateMediaDto {
   imagePath: string;
+  imageUrl: string;
   title: string;
   mediaType: MediaType;
   description?: string;

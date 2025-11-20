@@ -3,13 +3,14 @@ import { MediaType } from '../../../database/entities/media-content.entity';
 
 export class CreateMediaDto {
   @IsString()
-  imagePath: string;
+  imageUrl: string;
 
   @IsString()
   title: string;
 
+  @IsOptional()
   @IsEnum(MediaType)
-  mediaType: MediaType;
+  mediaType?: MediaType;
 
   @IsOptional()
   @IsString()
