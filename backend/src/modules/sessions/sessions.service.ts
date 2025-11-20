@@ -29,6 +29,7 @@ export class SessionsService {
   }
 
   async findOne(id: number): Promise<Session> {
+    
     const session = await this.sessionRepository.findOne({
       where: { id },
       relations: ['teams', 'teams.participants', 'sessionGames'],
@@ -36,6 +37,13 @@ export class SessionsService {
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
+    }
+
+    if (session.teams && session.teams.length > 0) {
+      session.teams.forEach((team, index) => {        
+      });
+    } else {
+      // console.log(`  ⚠️ teams가 비어있음!`);
     }
 
     return session;

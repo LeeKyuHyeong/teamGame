@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { SessionGame, GameStatus } from '../../database/entities/session-game.entity';
 import { GameType } from '../../database/entities/game-type.entity';
 import { GameRound } from '../../database/entities/game-round.entity';
+import { Song } from '../../database/entities/song.entity';
 import { CreateSessionGameDto } from './dto/create-session-game.dto';
 import { StartGameDto } from './dto/start-game.dto';
 
@@ -16,6 +17,8 @@ export class GamesService {
     private readonly gameTypeRepository: Repository<GameType>,
     @InjectRepository(GameRound)
     private readonly gameRoundRepository: Repository<GameRound>,
+    @InjectRepository(Song)
+    private readonly songRepository: Repository<Song>,
   ) {}
 
   // 게임 추가 (세션에 게임 등록)
@@ -73,15 +76,40 @@ export class GamesService {
     game.status = GameStatus.IN_PROGRESS;
     await this.sessionGameRepository.save(game);
 
-    // 콘텐츠 ID가 제공된 경우 라운드 생성
-    if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
+    let contentIds: number[] = [];
+
+    // roundCount가 제공된 경우 랜덤 선택
+    if (startGameDto.roundCount) {
+      if (game.gameType.gameCode === 'SONG') {
+        const allSongs = await this.songRepository.find();
+        
+        if (allSongs.length < startGameDto.roundCount) {
+          throw new BadRequestException(
+            `Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}`
+          );
+        }
+
+        // 랜덤 셔플
+        const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
+        contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
+        
+        console.log(`[GamesService] 랜덤 선곡: ${contentIds.length}곡`);
+      }
+    } 
+    // contentIds가 직접 제공된 경우
+    else if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
+      contentIds = startGameDto.contentIds;
+    }
+
+    // 라운드 생성
+    if (contentIds.length > 0) {
       const rounds: GameRound[] = [];
       
-      for (let i = 0; i < startGameDto.contentIds.length; i++) {
+      for (let i = 0; i < contentIds.length; i++) {
         const round = this.gameRoundRepository.create({
           sessionGameId: game.id,
           roundNumber: i + 1,
-          contentId: startGameDto.contentIds[i],
+          contentId: contentIds[i],
           contentType: game.gameType.gameCode,
           isAnswerRevealed: false,
         });
@@ -89,6 +117,7 @@ export class GamesService {
       }
 
       await this.gameRoundRepository.save(rounds);
+      console.log(`[GamesService] ${rounds.length}개 라운드 생성 완료`);
     }
 
     return await this.findOne(id);

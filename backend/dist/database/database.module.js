@@ -55,6 +55,8 @@ exports.DatabaseModule = DatabaseModule = __decorate([
                     synchronize: configService.get('NODE_ENV') === 'development',
                     logging: configService.get('NODE_ENV') === 'development',
                     timezone: '+09:00',
+                    bigNumberStrings: false,
+                    supportBigNumbers: true,
                 }),
             }),
         ],

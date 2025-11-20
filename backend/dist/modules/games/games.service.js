@@ -19,14 +19,17 @@ const typeorm_2 = require("typeorm");
 const session_game_entity_1 = require("../../database/entities/session-game.entity");
 const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
+const song_entity_1 = require("../../database/entities/song.entity");
 let GamesService = class GamesService {
     sessionGameRepository;
     gameTypeRepository;
     gameRoundRepository;
-    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository) {
+    songRepository;
+    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository) {
         this.sessionGameRepository = sessionGameRepository;
         this.gameTypeRepository = gameTypeRepository;
         this.gameRoundRepository = gameRoundRepository;
+        this.songRepository = songRepository;
     }
     async addGameToSession(createDto) {
         const gameType = await this.gameTypeRepository.findOne({
@@ -67,19 +70,35 @@ let GamesService = class GamesService {
         }
         game.status = session_game_entity_1.GameStatus.IN_PROGRESS;
         await this.sessionGameRepository.save(game);
-        if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
+        let contentIds = [];
+        if (startGameDto.roundCount) {
+            if (game.gameType.gameCode === 'SONG') {
+                const allSongs = await this.songRepository.find();
+                if (allSongs.length < startGameDto.roundCount) {
+                    throw new common_1.BadRequestException(`Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}`);
+                }
+                const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
+                contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
+                console.log(`[GamesService] 랜덤 선곡: ${contentIds.length}곡`);
+            }
+        }
+        else if (startGameDto.contentIds && startGameDto.contentIds.length > 0) {
+            contentIds = startGameDto.contentIds;
+        }
+        if (contentIds.length > 0) {
             const rounds = [];
-            for (let i = 0; i < startGameDto.contentIds.length; i++) {
+            for (let i = 0; i < contentIds.length; i++) {
                 const round = this.gameRoundRepository.create({
                     sessionGameId: game.id,
                     roundNumber: i + 1,
-                    contentId: startGameDto.contentIds[i],
+                    contentId: contentIds[i],
                     contentType: game.gameType.gameCode,
                     isAnswerRevealed: false,
                 });
                 rounds.push(round);
             }
             await this.gameRoundRepository.save(rounds);
+            console.log(`[GamesService] ${rounds.length}개 라운드 생성 완료`);
         }
         return await this.findOne(id);
     }
@@ -105,7 +124,9 @@ exports.GamesService = GamesService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(session_game_entity_1.SessionGame)),
     __param(1, (0, typeorm_1.InjectRepository)(game_type_entity_1.GameType)),
     __param(2, (0, typeorm_1.InjectRepository)(game_round_entity_1.GameRound)),
+    __param(3, (0, typeorm_1.InjectRepository)(song_entity_1.Song)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], GamesService);

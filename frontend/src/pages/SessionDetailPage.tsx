@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { sessionsApi, gamesApi, songsApi, mediaApi, speedApi, actionsApi } from '../api';
-import type { Session, Song, MediaContent, SpeedCategory, ActionItem } from '../types';
+import { sessionsApi, gamesApi, songsApi } from '../api';
+import type { Session, Song } from '../types';
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,48 +11,30 @@ export default function SessionDetailPage() {
 
   const [showGameSelect, setShowGameSelect] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState<string>('');
-  const [selectedContent, setSelectedContent] = useState<number[]>([]);
+  const [roundCount, setRoundCount] = useState<number>(5);
 
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['sessions', sessionId],
-    queryFn: () => sessionsApi.getDetail(sessionId),
+    queryFn: () => sessionsApi.getOne(sessionId),
   });
 
-  // 게임 타입별 콘텐츠 조회
+  // 노래 전체 개수 조회
   const { data: songs } = useQuery<Song[]>({
     queryKey: ['songs'],
     queryFn: songsApi.getAll,
     enabled: selectedGameType === 'SONG',
   });
 
-  const { data: mediaList } = useQuery<MediaContent[]>({
-    queryKey: ['media'],
-    queryFn: mediaApi.getAll,
-    enabled: selectedGameType === 'MEDIA',
-  });
-
-  const { data: speedCategories } = useQuery<SpeedCategory[]>({
-    queryKey: ['speed-categories'],
-    queryFn: speedApi.getAllCategories,
-    enabled: selectedGameType === 'SPEED',
-  });
-
-  const { data: actions } = useQuery<ActionItem[]>({
-    queryKey: ['actions'],
-    queryFn: actionsApi.getAll,
-    enabled: selectedGameType === 'ACTION',
-  });
+  // 최대 라운드 수 설정
+  useEffect(() => {
+    if (selectedGameType === 'SONG' && songs) {
+      setRoundCount(Math.min(5, songs.length));
+    }
+  }, [selectedGameType, songs]);
 
   const handleGameSelect = (gameCode: string) => {
     setSelectedGameType(gameCode);
-    setSelectedContent([]);
     setShowGameSelect(true);
-  };
-
-  const toggleContentSelection = (id: number) => {
-    setSelectedContent((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
   };
 
   const handleStartGame = async () => {
@@ -60,59 +42,39 @@ export default function SessionDetailPage() {
       alert('게임 타입을 선택해주세요.');
       return;
     }
-    if (selectedContent.length === 0) {
-      alert('콘텐츠를 선택해주세요.');
-      return;
-    }
-    
-    try {
-      // contentIds를 랜덤으로 섞기
-      const shuffledIds = [...selectedContent].sort(() => Math.random() - 0.5);
-      console.log('게임 시작:', selectedGameType, '섞인 콘텐츠:', shuffledIds);
-      
-      // 1. 게임 추가
-      const game = await gamesApi.create({
-        sessionId,
-        gameCode: selectedGameType,
-        gameOrder: (session?.sessionGames?.length || 0) + 1,
-      });
 
-      // 2. 게임 시작 (섞인 contentIds 전달)
-      const contentIds = shuffledIds.map((id) => Number(id));
-      await gamesApi.start(game.id, { contentIds });
+    if (selectedGameType === 'SONG') {
+      if (!songs || songs.length === 0) {
+        alert('등록된 노래가 없습니다.');
+        return;
+      }
 
-      // 3. 게임 진행 화면으로 이동
-      navigate(`/sessions/${sessionId}/games/${game.id}`);
-    } catch (error) {
-      console.error('게임 시작 오류:', error);
-      alert('게임 시작에 실패했습니다. 콘솔을 확인해주세요.');
-    }
-  };
+      if (roundCount <= 0 || roundCount > songs.length) {
+        alert(`라운드 수는 1~${songs.length} 사이여야 합니다.`);
+        return;
+      }
 
-  const getContentList = () => {
-    switch (selectedGameType) {
-      case 'SONG':
-        return songs?.map((song) => ({
-          id: song.id,
-          name: `${song.title} - ${song.artist}`,
-        }));
-      case 'MEDIA':
-        return mediaList?.map((media) => ({
-          id: media.id,
-          name: `${media.title} (${media.mediaType})`,
-        }));
-      case 'SPEED':
-        return speedCategories?.map((cat) => ({
-          id: cat.id,
-          name: `${cat.categoryName} (${cat.items?.length || 0}개 항목)`,
-        }));
-      case 'ACTION':
-        return actions?.map((action) => ({
-          id: action.id,
-          name: action.actionName,
-        }));
-      default:
-        return [];
+      try {
+        console.log('게임 시작:', selectedGameType, '라운드 수:', roundCount);
+
+        // 1. 게임 생성
+        const game = await gamesApi.create({
+          sessionId,
+          gameCode: selectedGameType,
+          gameOrder: (session?.sessionGames?.length || 0) + 1,
+        });
+
+        // 2. Backend에서 랜덤 선택하도록 roundCount만 전달
+        await gamesApi.start(game.id, { roundCount });
+
+        // 3. 게임 진행 화면으로 이동
+        navigate(`/sessions/${sessionId}/games/${game.id}`);
+      } catch (error) {
+        console.error('게임 시작 오류:', error);
+        alert('게임 시작에 실패했습니다. 콘솔을 확인해주세요.');
+      }
+    } else {
+      alert('현재는 노래 맞추기만 지원합니다.');
     }
   };
 
@@ -134,6 +96,12 @@ export default function SessionDetailPage() {
     );
   }
 
+  // 실제 참가자 수 계산 (MC 제외)
+  const totalParticipants = session.teams?.reduce((total, team) => {
+    const nonMcParticipants = team.participants?.filter(p => !p.isMc).length || 0;
+    return total + nonMcParticipants;
+  }, 0) || 0;
+
   return (
     <div>
       {/* 헤더 */}
@@ -146,7 +114,7 @@ export default function SessionDetailPage() {
             <div className="flex items-center space-x-4 text-gray-600">
               <span>MC: {session.mcName}</span>
               <span>•</span>
-              <span>참가자: {session.totalParticipants}명</span>
+              <span>참가자: {totalParticipants}명</span>
               <span>•</span>
               <span>
                 {new Date(session.sessionDate).toLocaleDateString('ko-KR')}
@@ -186,7 +154,7 @@ export default function SessionDetailPage() {
                 <div className="text-sm text-gray-600">점</div>
               </div>
             </div>
-            
+
             <div className="mb-2 text-sm text-gray-600">
               {team.teamType} • {team.participants?.length || 0}명
             </div>
@@ -214,7 +182,7 @@ export default function SessionDetailPage() {
       {/* 게임 선택 */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">게임 선택</h2>
-        
+
         {session.status === '준비중' || session.status === '진행중' ? (
           <div>
             {!showGameSelect ? (
@@ -227,25 +195,28 @@ export default function SessionDetailPage() {
                   <div className="font-semibold">노래 맞추기</div>
                 </button>
                 <button
-                  onClick={() => handleGameSelect('MEDIA')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
+                  disabled
+                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
                 >
                   <div className="text-4xl mb-2">🎬</div>
                   <div className="font-semibold">드라마/영화</div>
+                  <div className="text-xs text-gray-500">(준비 중)</div>
                 </button>
                 <button
-                  onClick={() => handleGameSelect('SPEED')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
+                  disabled
+                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
                 >
                   <div className="text-4xl mb-2">⚡</div>
                   <div className="font-semibold">스피드 게임</div>
+                  <div className="text-xs text-gray-500">(준비 중)</div>
                 </button>
                 <button
-                  onClick={() => handleGameSelect('ACTION')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition"
+                  disabled
+                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
                 >
                   <div className="text-4xl mb-2">🤸</div>
                   <div className="font-semibold">동작 게임</div>
+                  <div className="text-xs text-gray-500">(준비 중)</div>
                 </button>
               </div>
             ) : (
@@ -255,7 +226,6 @@ export default function SessionDetailPage() {
                     onClick={() => {
                       setShowGameSelect(false);
                       setSelectedGameType('');
-                      setSelectedContent([]);
                     }}
                     className="text-blue-600 hover:text-blue-700"
                   >
@@ -263,55 +233,69 @@ export default function SessionDetailPage() {
                   </button>
                 </div>
 
-                <h3 className="text-lg font-semibold mb-3">
-                  콘텐츠 선택 ({selectedContent.length}개 선택) 
-                  {selectedGameType === 'SONG' && ` / 전체 ${songs?.length || 0}개`}
-                </h3>
+                {selectedGameType === 'SONG' && (
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4">
+                      🎵 노래 맞추기 설정
+                    </h3>
 
-                <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-                  {getContentList()?.map((content) => (
-                    <label
-                      key={content.id}
-                      className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedContent.includes(content.id)}
-                        onChange={() => toggleContentSelection(content.id)}
-                        className="mr-3"
-                      />
-                      <span>{content.name}</span>
-                    </label>
-                  ))}
-                  {getContentList()?.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      등록된 콘텐츠가 없습니다.
-                      <Link to="/content" className="block mt-2 text-blue-600">
-                        콘텐츠 관리로 이동 →
-                      </Link>
+                    <div className="mb-6">
+                      <p className="text-gray-600 mb-2">
+                        등록된 노래: <span className="font-bold text-blue-600">{songs?.length || 0}곡</span>
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        랜덤으로 선곡됩니다
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowGameSelect(false);
-                      setSelectedGameType('');
-                      setSelectedContent([]);
-                    }}
-                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleStartGame}
-                    disabled={selectedContent.length === 0}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    게임 시작
-                  </button>
-                </div>
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        진행할 라운드 수
+                      </label>
+                      <input
+                        type="number"
+                        value={roundCount}
+                        onChange={(e) => setRoundCount(parseInt(e.target.value) || 1)}
+                        min={1}
+                        max={songs?.length || 1}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        1 ~ {songs?.length || 0} 사이의 숫자를 입력하세요
+                      </p>
+                    </div>
+
+                    {(!songs || songs.length === 0) && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <p className="text-yellow-800">
+                          등록된 노래가 없습니다.
+                          <Link to="/content" className="underline ml-2">
+                            콘텐츠 관리로 이동 →
+                          </Link>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => {
+                          setShowGameSelect(false);
+                          setSelectedGameType('');
+                        }}
+                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={handleStartGame}
+                        disabled={!songs || songs.length === 0}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        게임 시작
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -13,6 +13,7 @@ exports.StartGameDto = void 0;
 const class_validator_1 = require("class-validator");
 class StartGameDto {
     contentIds;
+    roundCount;
 }
 exports.StartGameDto = StartGameDto;
 __decorate([
@@ -21,4 +22,10 @@ __decorate([
     (0, class_validator_1.IsInt)({ each: true }),
     __metadata("design:type", Array)
 ], StartGameDto.prototype, "contentIds", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], StartGameDto.prototype, "roundCount", void 0);
 //# sourceMappingURL=start-game.dto.js.map

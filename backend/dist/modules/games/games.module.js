@@ -14,12 +14,13 @@ const games_controller_1 = require("./games.controller");
 const session_game_entity_1 = require("../../database/entities/session-game.entity");
 const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
+const song_entity_1 = require("../../database/entities/song.entity");
 let GamesModule = class GamesModule {
 };
 exports.GamesModule = GamesModule;
 exports.GamesModule = GamesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([session_game_entity_1.SessionGame, game_type_entity_1.GameType, game_round_entity_1.GameRound])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([session_game_entity_1.SessionGame, game_type_entity_1.GameType, game_round_entity_1.GameRound, song_entity_1.Song])],
         controllers: [games_controller_1.GamesController],
         providers: [games_service_1.GamesService],
         exports: [games_service_1.GamesService],

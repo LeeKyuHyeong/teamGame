@@ -43,6 +43,12 @@ let SessionsService = class SessionsService {
         if (!session) {
             throw new common_1.NotFoundException(`Session with ID ${id} not found`);
         }
+        if (session.teams && session.teams.length > 0) {
+            session.teams.forEach((team, index) => {
+            });
+        }
+        else {
+        }
         return session;
     }
     async update(id, updateSessionDto) {

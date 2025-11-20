@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { roundsApi, scoresApi, gamesApi } from '../../api';
+import { roundsApi, scoresApi, gamesApi, sessionsApi } from '../../api';
 import type { SessionGame, Session, GameRound, Participant } from '../../types';
 
 interface Props {
@@ -9,30 +9,31 @@ interface Props {
   session?: Session;
 }
 
-export default function SongGame({ game, session }: Props) {
+export default function SongGame({ game, session: sessionProp }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const playerRef = useRef<any>(null);
-  
+    
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [winner, setWinner] = useState<Participant | null>(null);
+  const [youtubeReady, setYoutubeReady] = useState(false);
+
+  // session을 직접 다시 조회
+  const { data: sessionFromQuery } = useQuery<Session>({
+    queryKey: ['sessions', game.sessionId],
+    queryFn: () => sessionsApi.getOne(game.sessionId),
+    enabled: !!game.sessionId,
+  });
+
+  // session prop이 있으면 그걸 쓰고, 없으면 직접 조회한 것 사용
+  const session = sessionProp || sessionFromQuery;
 
   const { data: rounds, isLoading } = useQuery<GameRound[]>({
     queryKey: ['rounds', game.id],
     queryFn: () => roundsApi.getByGame(game.id),
   });
-
-  // 디버깅
-  useEffect(() => {
-    console.log('Rounds 데이터:', rounds);
-    console.log('현재 라운드 인덱스:', currentRoundIndex);
-    if (rounds && rounds.length > 0) {
-      console.log('현재 라운드:', rounds[currentRoundIndex]);
-      console.log('노래 데이터:', rounds[currentRoundIndex]?.content);
-    }
-  }, [rounds, currentRoundIndex]);
 
   const scoreMutation = useMutation({
     mutationFn: scoresApi.assignScore,
@@ -49,15 +50,32 @@ export default function SongGame({ game, session }: Props) {
     },
   });
 
-  // YouTube API 로드
+  // YouTube API 로드 - 개선된 버전
   useEffect(() => {
+    // 이미 로드되었는지 확인
+    if ((window as any).YT && (window as any).YT.Player) {
+      setYoutubeReady(true);
+      return;
+    }
+
+    // 이미 스크립트가 추가되었는지 확인
+    const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
+    if (existingScript) {
+      // 이미 있다면 콜백만 다시 설정
+      (window as any).onYouTubeIframeAPIReady = () => {
+        setYoutubeReady(true);
+      };
+      return;
+    }
+
+    console.log('YouTube API 스크립트 추가');
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
 
     (window as any).onYouTubeIframeAPIReady = () => {
-      console.log('YouTube API Ready');
+      setYoutubeReady(true);
     };
   }, []);
 
@@ -73,16 +91,18 @@ export default function SongGame({ game, session }: Props) {
 
   // 플레이어 생성
   useEffect(() => {
-    console.log('=== 플레이어 생성 시도 ===');
-    console.log('song:', song);
-    console.log('YouTube API 로드됨:', !!(window as any).YT);
-    console.log('playerRef.current:', playerRef.current);
-    console.log('모든 조건:', song && (window as any).YT && !playerRef.current);
     
-    if (song && (window as any).YT && !playerRef.current) {
-      console.log('✅ 플레이어 생성 조건 충족');
+    // DOM 요소 확인
+    const playerElement = document.getElementById('youtube-player');
+    
+    if (song && youtubeReady && !playerRef.current) {
+      
+      if (!playerElement) {
+        console.error('❌ youtube-player DOM 요소를 찾을 수 없음!');
+        return;
+      }
+      
       const videoId = getVideoId(song.youtubeUrl);
-      console.log('비디오 ID:', videoId);
       
       if (!videoId) {
         console.error('❌ 비디오 ID를 추출할 수 없음:', song.youtubeUrl);
@@ -91,11 +111,11 @@ export default function SongGame({ game, session }: Props) {
       
       try {
         playerRef.current = new (window as any).YT.Player('youtube-player', {
-          height: '1', // 최소 크기 (0이면 소리 안남)
+          height: '1',
           width: '1',
           videoId: videoId,
           playerVars: {
-            start: song.startTime || 0, // 시작 시간 적용
+            start: song.startTime || 0,
             controls: 0,
             autoplay: 0,
           },
@@ -103,31 +123,27 @@ export default function SongGame({ game, session }: Props) {
             onReady: (_event: any) => {
               console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
             },
-            onStateChange: (event: any) => {
-              console.log('플레이어 상태 변경:', event.data);
+            onStateChange: (_event: any) => {
+              // console.log('플레이어 상태 변경:', event.data);
             },
-            onError: (event: any) => {
-              console.error('❌ 플레이어 에러:', event.data);
+            onError: (_event: any) => {
+              // console.error('❌ 플레이어 에러:', event.data);
             },
           },
         });
-        console.log('✅ 플레이어 객체 생성 완료');
       } catch (error) {
         console.error('❌ 플레이어 생성 실패:', error);
       }
     } else {
       console.log('❌ 플레이어 생성 조건 미충족');
       if (!song) console.log('  - song이 없음');
-      if (!(window as any).YT) console.log('  - YouTube API가 로드되지 않음');
-      if (playerRef.current) console.log('  - 플레이어가 이미 존재함');
+      if (!youtubeReady) console.log('  - YouTube API가 아직 준비되지 않음');
+      if (playerRef.current) console.log('  - 플레이어가 이미 존재함:', playerRef.current);
     }
-  }, [song]);
+  }, [song, youtubeReady]);
 
   const handlePlay = () => {
-    console.log('재생 버튼 클릭');
-    console.log('플레이어:', playerRef.current);
     if (playerRef.current && playerRef.current.playVideo) {
-      console.log('✅ 재생 시작');
       playerRef.current.playVideo();
       setIsPlaying(true);
     } else {
@@ -136,9 +152,7 @@ export default function SongGame({ game, session }: Props) {
   };
 
   const handlePause = () => {
-    console.log('멈춤 버튼 클릭');
     if (playerRef.current && playerRef.current.pauseVideo) {
-      console.log('✅ 일시정지');
       playerRef.current.pauseVideo();
       setIsPlaying(false);
     } else {
@@ -151,8 +165,8 @@ export default function SongGame({ game, session }: Props) {
 
     // 점수 부여 (예: 10점)
     scoreMutation.mutate({
-      roundId: currentRound.id,
-      teamId: participant.teamId,
+      roundId: Number(currentRound.id),
+      teamId: Number(participant.teamId),
       score: 10,
     });
 
@@ -192,22 +206,6 @@ export default function SongGame({ game, session }: Props) {
     ...(session?.teams?.[0]?.participants || []),
     ...(session?.teams?.[1]?.participants || []),
   ].filter((p) => !p.isMc);
-
-  // 디버깅 - 세션과 참가자 데이터 확인
-  useEffect(() => {
-    console.log('=== 세션 데이터 ===');
-    console.log('Session:', session);
-    console.log('Teams:', session?.teams);
-    if (session?.teams) {
-      session.teams.forEach((team, index) => {
-        console.log(`Team ${index}:`, team);
-        console.log(`  - teamName:`, team.teamName);
-        console.log(`  - totalScore:`, team.totalScore);
-        console.log(`  - participants:`, team.participants);
-      });
-    }
-    console.log('All Participants:', allParticipants);
-  }, [session, allParticipants]);
 
   if (isLoading) {
     return (

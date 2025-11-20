@@ -43,6 +43,8 @@ import { ActionItem } from './entities/action-item.entity';
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
         timezone: '+09:00',
+        bigNumberStrings: false, // bigint를 문자열이 아닌 숫자로 반환
+        supportBigNumbers: true,
       }),
     }),
   ],

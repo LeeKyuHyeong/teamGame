@@ -20,14 +20,14 @@ export default function CreateSessionPage() {
     onSuccess: async (session) => {
       // A팀 생성
       const teamA = await teamsApi.create({
-        sessionId: session.id,
+        sessionId: Number(session.id),
         teamName: 'A팀',
         teamType: TeamType.MALE,
       });
 
       // B팀 생성
       const teamB = await teamsApi.create({
-        sessionId: session.id,
+        sessionId: Number(session.id),
         teamName: 'B팀',
         teamType: TeamType.FEMALE,
       });
@@ -36,7 +36,7 @@ export default function CreateSessionPage() {
       const teamAData = teamAParticipants
         .filter((name) => name.trim())
         .map((name) => ({
-          teamId: teamA.id,
+          teamId: Number(teamA.id),
           participantName: name.trim(),
         }));
       
@@ -48,7 +48,7 @@ export default function CreateSessionPage() {
       const teamBData = teamBParticipants
         .filter((name) => name.trim())
         .map((name) => ({
-          teamId: teamB.id,
+          teamId: Number(teamB.id),
           participantName: name.trim(),
         }));
       
@@ -59,7 +59,7 @@ export default function CreateSessionPage() {
       // MC 추가
       if (mcName.trim()) {
         await participantsApi.create({
-          teamId: teamA.id,
+          teamId: Number(teamA.id),
           participantName: mcName.trim(),
           isMc: true,
         });

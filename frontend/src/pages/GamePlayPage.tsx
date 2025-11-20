@@ -20,15 +20,7 @@ export default function GamePlayPage() {
     queryKey: ['games', parseInt(gameId || '0')],
     queryFn: () => gamesApi.getOne(parseInt(gameId || '0')),
   });
-
-  // 디버깅
-  console.log('=== GamePlayPage ===');
-  console.log('sessionId:', sessionId);
-  console.log('gameId:', gameId);
-  console.log('session 로딩:', sessionLoading);
-  console.log('session 데이터:', session);
-  console.log('game 데이터:', game);
-
+  
   if (isLoading || sessionLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
