@@ -26,7 +26,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="p-4 bg-white text-black dark:bg-gray-900 dark:text-white">
+      {/* <div className="p-4 bg-white text-black dark:bg-gray-900 dark:text-white">
         <button
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           className="px-4 py-2 rounded bg-gray-200 text-black dark:bg-gray-700 dark:text-white border"
@@ -35,7 +35,8 @@ function App() {
         </button>
         
         <RouterProvider router={router} />
-      </div>
+      </div> */}
+        <RouterProvider router={router} />
     </QueryClientProvider>
   );
 }
