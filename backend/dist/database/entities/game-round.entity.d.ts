@@ -6,6 +6,7 @@ export declare class GameRound {
     roundNumber: number;
     contentId: number;
     contentType: string;
+    teamId: number;
     isAnswerRevealed: boolean;
     createdAt: Date;
     sessionGame: SessionGame;

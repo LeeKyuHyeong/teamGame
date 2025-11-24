@@ -19,6 +19,7 @@ let GameRound = class GameRound {
     roundNumber;
     contentId;
     contentType;
+    teamId;
     isAnswerRevealed;
     createdAt;
     sessionGame;
@@ -45,6 +46,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 20, nullable: true, name: 'content_type' }),
     __metadata("design:type", String)
 ], GameRound.prototype, "contentType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'bigint', nullable: true, name: 'team_id' }),
+    __metadata("design:type", Number)
+], GameRound.prototype, "teamId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false, name: 'is_answer_revealed' }),
     __metadata("design:type", Boolean)

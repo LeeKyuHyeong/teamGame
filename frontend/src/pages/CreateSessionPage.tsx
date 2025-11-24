@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { sessionsApi, teamsApi, participantsApi } from '../api';
-import { type CreateSessionDto, TeamType } from '../types';
+import { sessionsApi, participantsApi } from '../api';
+import type { CreateSessionDto } from '../types';
 
 export default function CreateSessionPage() {
   const navigate = useNavigate();
@@ -11,6 +11,8 @@ export default function CreateSessionPage() {
   const [sessionName, setSessionName] = useState('');
   const [mcName, setMcName] = useState('');
   const [totalParticipants, setTotalParticipants] = useState(14);
+  const [teamAName, setTeamAName] = useState('A팀');
+  const [teamBName, setTeamBName] = useState('B팀');
   
   const [teamAParticipants, setTeamAParticipants] = useState<string[]>(['']);
   const [teamBParticipants, setTeamBParticipants] = useState<string[]>(['']);
@@ -18,25 +20,20 @@ export default function CreateSessionPage() {
   const createSessionMutation = useMutation({
     mutationFn: sessionsApi.create,
     onSuccess: async (session) => {
-      // A팀 생성
-      const teamA = await teamsApi.create({
-        sessionId: Number(session.id),
-        teamName: 'A팀',
-        teamType: TeamType.MALE,
-      });
+      // 팀은 Backend에서 자동 생성되므로 조회
+      const fullSession = await sessionsApi.getOne(session.id);
+      const teamA = fullSession.teams?.find(t => t.teamName === teamAName);
+      const teamB = fullSession.teams?.find(t => t.teamName === teamBName);
 
-      // B팀 생성
-      const teamB = await teamsApi.create({
-        sessionId: Number(session.id),
-        teamName: 'B팀',
-        teamType: TeamType.FEMALE,
-      });
+      if (!teamA || !teamB) {
+        throw new Error('팀 생성에 실패했습니다.');
+      }
 
       // A팀 참가자 추가
       const teamAData = teamAParticipants
         .filter((name) => name.trim())
         .map((name) => ({
-          teamId: Number(teamA.id),
+          teamId: teamA.id,
           participantName: name.trim(),
         }));
       
@@ -48,7 +45,7 @@ export default function CreateSessionPage() {
       const teamBData = teamBParticipants
         .filter((name) => name.trim())
         .map((name) => ({
-          teamId: Number(teamB.id),
+          teamId: teamB.id,
           participantName: name.trim(),
         }));
       
@@ -59,14 +56,14 @@ export default function CreateSessionPage() {
       // MC 추가
       if (mcName.trim()) {
         await participantsApi.create({
-          teamId: Number(teamA.id),
+          teamId: teamA.id,
           participantName: mcName.trim(),
           isMc: true,
         });
       }
 
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      navigate('/sessions/');
+      navigate('/sessions');
     },
   });
 
@@ -77,6 +74,8 @@ export default function CreateSessionPage() {
       sessionName,
       mcName,
       totalParticipants,
+      teamAName,
+      teamBName,
     };
 
     createSessionMutation.mutate(data);
@@ -158,8 +157,20 @@ export default function CreateSessionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* A팀 */}
           <div className="bg-white p-6 rounded-lg shadow">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                팀 이름
+              </label>
+              <input
+                type="text"
+                value={teamAName}
+                onChange={(e) => setTeamAName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="A팀"
+              />
+            </div>
             <h3 className="text-lg font-semibold mb-4 text-blue-600">
-              A팀 (남성)
+              참가자
             </h3>
             <div className="space-y-2">
               {teamAParticipants.map((name, index) => (
@@ -184,8 +195,20 @@ export default function CreateSessionPage() {
 
           {/* B팀 */}
           <div className="bg-white p-6 rounded-lg shadow">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                팀 이름
+              </label>
+              <input
+                type="text"
+                value={teamBName}
+                onChange={(e) => setTeamBName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                placeholder="B팀"
+              />
+            </div>
             <h3 className="text-lg font-semibold mb-4 text-pink-600">
-              B팀 (여성)
+              참가자
             </h3>
             <div className="space-y-2">
               {teamBParticipants.map((name, index) => (

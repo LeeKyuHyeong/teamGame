@@ -23,6 +23,8 @@ export interface CreateSessionDto {
   sessionDate?: string;
   mcName?: string;
   totalParticipants?: number;
+  teamAName?: string;
+  teamBName?: string;
 }
 
 export interface UpdateSessionDto {
@@ -106,6 +108,7 @@ export interface CreateSessionGameDto {
 export interface StartGameDto {
   contentIds?: number[];
   roundCount?: number;
+  teamConfigs?: TeamSpeedConfig[];
 }
 
 // Round Types
@@ -115,6 +118,7 @@ export interface GameRound {
   roundNumber: number;
   contentId: number;
   contentType: string;
+  teamId?: number;
   isAnswerRevealed: boolean;
   createdAt: string;
   roundScores?: RoundScore[];

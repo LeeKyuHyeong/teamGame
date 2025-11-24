@@ -12,12 +12,13 @@ const typeorm_1 = require("@nestjs/typeorm");
 const sessions_service_1 = require("./sessions.service");
 const sessions_controller_1 = require("./sessions.controller");
 const session_entity_1 = require("../../database/entities/session.entity");
+const team_entity_1 = require("../../database/entities/team.entity");
 let SessionsModule = class SessionsModule {
 };
 exports.SessionsModule = SessionsModule;
 exports.SessionsModule = SessionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([session_entity_1.Session])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([session_entity_1.Session, team_entity_1.Team])],
         controllers: [sessions_controller_1.SessionsController],
         providers: [sessions_service_1.SessionsService],
         exports: [sessions_service_1.SessionsService],

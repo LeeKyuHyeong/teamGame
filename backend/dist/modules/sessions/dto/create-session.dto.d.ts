@@ -3,4 +3,6 @@ export declare class CreateSessionDto {
     sessionDate?: string;
     mcName?: string;
     totalParticipants?: number;
+    teamAName?: string;
+    teamBName?: string;
 }

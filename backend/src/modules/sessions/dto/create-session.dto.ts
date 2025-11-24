@@ -16,4 +16,12 @@ export class CreateSessionDto {
   @IsInt()
   @Min(1)
   totalParticipants?: number;
+
+  @IsOptional()
+  @IsString()
+  teamAName?: string;
+
+  @IsOptional()
+  @IsString()
+  teamBName?: string;
 }

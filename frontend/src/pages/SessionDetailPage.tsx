@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { sessionsApi, gamesApi, songsApi, mediaApi } from '../api';
-import type { MediaContent, Session, Song } from '../types';
+import { sessionsApi, gamesApi, songsApi, mediaApi, speedApi } from '../api';
+import type { Session, Song, MediaContent, SpeedCategory, TeamSpeedConfig } from '../types';
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +12,12 @@ export default function SessionDetailPage() {
   const [showGameSelect, setShowGameSelect] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState<string>('');
   const [roundCount, setRoundCount] = useState<number>(5);
+
+  // 스피드 게임 팀별 설정
+  const [teamACategory, setTeamACategory] = useState<number>(0);
+  const [teamARounds, setTeamARounds] = useState<number>(5);
+  const [teamBCategory, setTeamBCategory] = useState<number>(0);
+  const [teamBRounds, setTeamBRounds] = useState<number>(5);
 
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['sessions', sessionId],
@@ -30,6 +36,13 @@ export default function SessionDetailPage() {
     queryKey: ['media'],
     queryFn: mediaApi.getAll,
     enabled: selectedGameType === 'MEDIA',
+  });
+
+  // 스피드 카테고리 조회
+  const { data: speedCategories } = useQuery<SpeedCategory[]>({
+    queryKey: ['speed-categories'],
+    queryFn: speedApi.getAllCategories,
+    enabled: selectedGameType === 'SPEED',
   });
 
   // 최대 라운드 수 설정
@@ -72,6 +85,21 @@ export default function SessionDetailPage() {
         alert(`라운드 수는 1~${mediaList.length} 사이여야 합니다.`);
         return;
       }
+    } else if (selectedGameType === 'SPEED') {
+      if (!speedCategories || speedCategories.length === 0) {
+        alert('등록된 스피드 게임 유형이 없습니다.');
+        return;
+      }
+
+      if (teamACategory === 0 || teamBCategory === 0) {
+        alert('양 팀의 게임 유형을 모두 선택해주세요.');
+        return;
+      }
+
+      if (!session?.teams || session.teams.length < 2) {
+        alert('팀 정보를 찾을 수 없습니다.');
+        return;
+      }
     }
 
     try {
@@ -81,7 +109,24 @@ export default function SessionDetailPage() {
         gameOrder: (session?.sessionGames?.length || 0) + 1,
       });
 
-      await gamesApi.start(game.id, { roundCount });
+      if (selectedGameType === 'SPEED') {
+        const teamConfigs: TeamSpeedConfig[] = [
+          {
+            teamId: session!.teams![0].id,
+            categoryId: teamACategory,
+            roundCount: teamARounds,
+          },
+          {
+            teamId: session!.teams![1].id,
+            categoryId: teamBCategory,
+            roundCount: teamBRounds,
+          },
+        ];
+
+        await gamesApi.start(game.id, { teamConfigs });
+      } else {
+        await gamesApi.start(game.id, { roundCount });
+      }
 
       navigate(`/sessions/${sessionId}/games/${game.id}`);
     } catch (error) {
@@ -226,12 +271,11 @@ export default function SessionDetailPage() {
                   <div className="font-semibold">드라마/영화</div>
                 </button>
                 <button
-                  disabled
-                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                  onClick={() => handleGameSelect('SPEED')}
+                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition"
                 >
                   <div className="text-4xl mb-2">⚡</div>
                   <div className="font-semibold">스피드 게임</div>
-                  <div className="text-xs text-gray-500">(준비 중)</div>
                 </button>
                 <button
                   disabled
@@ -383,6 +427,9 @@ export default function SessionDetailPage() {
                     </div>
                   </div>
                 )}
+
+                
+                
                   </div>
                 )}
               </div>

@@ -1,13 +1,32 @@
-import { IsOptional, IsArray, IsInt, Min } from 'class-validator';
+import { IsOptional, IsArray, IsInt, Min, ValidateNested, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class TeamSpeedConfig {
+  @IsInt()
+  teamId: number;
+
+  @IsInt()
+  categoryId: number;
+
+  @IsInt()
+  @Min(1)
+  roundCount: number;
+}
 
 export class StartGameDto {
   @IsOptional()
   @IsArray()
   @IsInt({ each: true })
-  contentIds?: number[]; // 게임에서 사용할 콘텐츠 ID 목록 (직접 선택)
+  contentIds?: number[];
 
   @IsOptional()
   @IsInt()
   @Min(1)
-  roundCount?: number; // 랜덤 선택할 라운드 수
+  roundCount?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TeamSpeedConfig)
+  teamConfigs?: TeamSpeedConfig[]; // 스피드 게임용 팀별 설정
 }

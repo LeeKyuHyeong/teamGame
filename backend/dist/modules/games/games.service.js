@@ -21,18 +21,21 @@ const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
+const speed_category_entity_1 = require("../../database/entities/speed-category.entity");
 let GamesService = class GamesService {
     sessionGameRepository;
     gameTypeRepository;
     gameRoundRepository;
     songRepository;
     mediaRepository;
-    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository, mediaRepository) {
+    speedCategoryRepository;
+    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository, mediaRepository, speedCategoryRepository) {
         this.sessionGameRepository = sessionGameRepository;
         this.gameTypeRepository = gameTypeRepository;
         this.gameRoundRepository = gameRoundRepository;
         this.songRepository = songRepository;
         this.mediaRepository = mediaRepository;
+        this.speedCategoryRepository = speedCategoryRepository;
     }
     async addGameToSession(createDto) {
         const gameType = await this.gameTypeRepository.findOne({
@@ -78,7 +81,30 @@ let GamesService = class GamesService {
         game.status = session_game_entity_1.GameStatus.IN_PROGRESS;
         await this.sessionGameRepository.save(game);
         let contentIds = [];
-        if (startGameDto.roundCount) {
+        const teamRounds = [];
+        if (startGameDto.teamConfigs && startGameDto.teamConfigs.length > 0) {
+            console.log('  - 스피드 게임 팀별 설정:', startGameDto.teamConfigs);
+            for (const config of startGameDto.teamConfigs) {
+                const category = await this.speedCategoryRepository.findOne({
+                    where: { id: config.categoryId },
+                    relations: ['items'],
+                });
+                if (!category || !category.items) {
+                    throw new common_1.BadRequestException(`Category ${config.categoryId} not found or has no items`);
+                }
+                if (category.items.length < config.roundCount) {
+                    throw new common_1.BadRequestException(`Not enough items in category. Requested: ${config.roundCount}, Available: ${category.items.length}`);
+                }
+                for (let i = 0; i < config.roundCount; i++) {
+                    teamRounds.push({
+                        teamId: config.teamId,
+                        contentId: config.categoryId,
+                    });
+                }
+            }
+            console.log('  - 생성할 팀별 라운드:', teamRounds);
+        }
+        else if (startGameDto.roundCount) {
             if (game.gameType.gameCode === 'SONG') {
                 const allSongs = await this.songRepository.find();
                 if (allSongs.length < startGameDto.roundCount) {
@@ -104,7 +130,24 @@ let GamesService = class GamesService {
             contentIds = startGameDto.contentIds;
         }
         console.log('  - 최종 contentIds:', contentIds);
-        if (contentIds.length > 0) {
+        console.log('  - teamRounds:', teamRounds);
+        if (teamRounds.length > 0) {
+            const rounds = [];
+            teamRounds.forEach((tr, index) => {
+                const round = this.gameRoundRepository.create({
+                    sessionGameId: game.id,
+                    roundNumber: index + 1,
+                    contentId: tr.contentId,
+                    contentType: game.gameType.gameCode,
+                    isAnswerRevealed: false,
+                    teamId: tr.teamId,
+                });
+                rounds.push(round);
+            });
+            const savedRounds = await this.gameRoundRepository.save(rounds);
+            console.log('  - 생성된 팀별 라운드 수:', savedRounds.length);
+        }
+        else if (contentIds.length > 0) {
             const rounds = [];
             for (let i = 0; i < contentIds.length; i++) {
                 const round = this.gameRoundRepository.create({
@@ -151,7 +194,9 @@ exports.GamesService = GamesService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(game_round_entity_1.GameRound)),
     __param(3, (0, typeorm_1.InjectRepository)(song_entity_1.Song)),
     __param(4, (0, typeorm_1.InjectRepository)(media_content_entity_1.MediaContent)),
+    __param(5, (0, typeorm_1.InjectRepository)(speed_category_entity_1.SpeedCategory)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

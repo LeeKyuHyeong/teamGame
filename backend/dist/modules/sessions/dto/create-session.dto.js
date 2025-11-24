@@ -16,6 +16,8 @@ class CreateSessionDto {
     sessionDate;
     mcName;
     totalParticipants;
+    teamAName;
+    teamBName;
 }
 exports.CreateSessionDto = CreateSessionDto;
 __decorate([
@@ -38,4 +40,14 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], CreateSessionDto.prototype, "totalParticipants", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSessionDto.prototype, "teamAName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSessionDto.prototype, "teamBName", void 0);
 //# sourceMappingURL=create-session.dto.js.map

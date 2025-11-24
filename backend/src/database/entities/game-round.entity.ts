@@ -27,6 +27,9 @@ export class GameRound {
   @Column({ type: 'varchar', length: 20, nullable: true, name: 'content_type' })
   contentType: string;
 
+  @Column({ type: 'bigint', nullable: true, name: 'team_id' })
+  teamId: number;
+
   @Column({ type: 'boolean', default: false, name: 'is_answer_revealed' })
   isAnswerRevealed: boolean;
 
