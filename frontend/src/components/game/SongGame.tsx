@@ -19,6 +19,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   const [answered, setAnswered] = useState(false);
   const [winner, setWinner] = useState<Participant | null>(null);
   const [youtubeReady, setYoutubeReady] = useState(false);
+  const [teamScores, setTeamScores] = useState<{ [teamId: number]: number }>({});
 
   // session을 직접 다시 조회
   const { data: sessionFromQuery } = useQuery<Session>({
@@ -30,45 +31,66 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   // session prop이 있으면 그걸 쓰고, 없으면 직접 조회한 것 사용
   const session = sessionProp || sessionFromQuery;
 
+  // 세션 로드 시 초기 팀 점수 계산
+  useEffect(() => {
+    if (session?.teams) {
+      const scores: { [teamId: number]: number } = {};
+      session.teams.forEach(team => {
+        const teamScore = team.participants
+          ?.filter(p => !p.isMc)
+          .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
+        scores[team.id] = teamScore;
+      });
+      setTeamScores(scores);
+    }
+  }, [session]);
+
   const { data: rounds, isLoading } = useQuery<GameRound[]>({
     queryKey: ['rounds', game.id],
     queryFn: () => roundsApi.getByGame(game.id),
   });
 
-  const scoreMutation = useMutation({    
+  const scoreMutation = useMutation({
     mutationFn: scoresApi.assignScore,
-    onMutate: async (newScore) => {
-      await queryClient.cancelQueries({ queryKey: ['sessions', game.sessionId] });
-      console.log('scoreMuation');
-      const previousSession = queryClient.getQueryData(['sessions', game.sessionId]);
-      
-      queryClient.setQueryData(['sessions', game.sessionId], (old: Session | undefined) => {
-        if (!old) return old;
-        
-        return {
-          ...old,
-          teams: old.teams?.map(team => ({
-            ...team,
-            participants: team.participants?.map(p => 
-              p.id === newScore.participantId 
-                ? { ...p, totalScore: (p.totalScore || 0) + newScore.score }
-                : p
-            ),
-          })),
-        };
-      });
-      
-      return { previousSession };
-    },
-    onError: (_err, _newScore, context) => {
-      if (context?.previousSession) {
-        queryClient.setQueryData(['sessions', game.sessionId], context.previousSession);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
     },
   });
+
+  // const scoreMutation = useMutation({    
+  //   mutationFn: scoresApi.assignScore,
+  //   onMutate: async (newScore) => {
+  //     await queryClient.cancelQueries({ queryKey: ['sessions', game.sessionId] });
+  //     console.log('scoreMuation');
+  //     const previousSession = queryClient.getQueryData(['sessions', game.sessionId]);
+      
+  //     queryClient.setQueryData(['sessions', game.sessionId], (old: Session | undefined) => {
+  //       if (!old) return old;
+        
+  //       return {
+  //         ...old,
+  //         teams: old.teams?.map(team => ({
+  //           ...team,
+  //           participants: team.participants?.map(p => 
+  //             p.id === newScore.participantId 
+  //               ? { ...p, totalScore: (p.totalScore || 0) + newScore.score }
+  //               : p
+  //           ),
+  //         })),
+  //       };
+  //     });
+      
+  //     return { previousSession };
+  //   },
+  //   onError: (_err, _newScore, context) => {
+  //     if (context?.previousSession) {
+  //       queryClient.setQueryData(['sessions', game.sessionId], context.previousSession);
+  //     }
+  //   },
+  //   onSettled: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
+  //   },
+  // });
 
   const completeGameMutation = useMutation({
     mutationFn: () => gamesApi.complete(game.id),
@@ -217,6 +239,14 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   const handleParticipantClick = (participant: Participant) => {
     if (answered || !currentRound) return;
 
+    // 즉시 팀 점수 업데이트 (새 객체 생성하여 리렌더링 보장)
+    setTeamScores(prev => {
+      const newScores = { ...prev };
+      newScores[participant.teamId] = (newScores[participant.teamId] || 0) + 10;
+      console.log('팀 점수 업데이트:', newScores);
+      return newScores;
+    });
+    
     scoreMutation.mutate({
       roundId: Number(currentRound.id),
       teamId: Number(participant.teamId),
@@ -365,26 +395,21 @@ export default function SongGame({ game, session: sessionProp }: Props) {
 
         {/* 팀 점수판 */}
         <div className="grid grid-cols-2 gap-6 mb-8">
-          {session?.teams?.map((team) => {
-            const teamScore = team.participants
-              ?.filter(p => !p.isMc)
-              .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
-            
-            return (
-              <div
-                key={team.id}
-                className={`p-6 rounded-lg ${
-                  team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="text-2xl font-bold">{team.teamName}</h3>
-                  <div className="text-4xl font-bold">{teamScore}</div>
-                </div>
+          {session?.teams?.map((team) => (
+            <div
+              key={team.id}
+              className={`p-6 rounded-lg ${
+                team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">{team.teamName}</h3>
+                <div className="text-4xl font-bold">{teamScores[team.id] || 0}</div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
+        
       </div>
 
       {/* 메인 콘텐츠 */}
