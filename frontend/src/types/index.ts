@@ -1,16 +1,11 @@
-// Session Types
-export enum SessionStatus {
-  READY = '준비중',
-  IN_PROGRESS = '진행중',
-  COMPLETED = '완료',
-}
+import type { ReactNode } from "react";
 
 export interface Session {
   id: number;
   sessionName: string;
   sessionDate: string;
   mcName: string;
-  status: SessionStatus;
+  status: string;
   totalParticipants: number;
   createdAt: string;
   updatedAt: string;
@@ -18,67 +13,23 @@ export interface Session {
   sessionGames?: SessionGame[];
 }
 
-export interface CreateSessionDto {
-  sessionName: string;
-  sessionDate?: string;
-  mcName?: string;
-  totalParticipants?: number;
-  teamAName?: string;
-  teamBName?: string;
-}
-
-export interface UpdateSessionDto {
-  sessionName?: string;
-  sessionDate?: string;
-  mcName?: string;
-  status?: SessionStatus;
-  totalParticipants?: number;
-}
-
-// Team Types
-export enum TeamType {
-  MALE = '남성',
-  FEMALE = '여성',
-}
-
 export interface Team {
   id: number;
   sessionId: number;
   teamName: string;
-  teamType: TeamType;
+  teamType: string;
   totalScore: number;
   createdAt: string;
   participants?: Participant[];
 }
 
-export interface CreateTeamDto {
-  sessionId: number;
-  teamName: string;
-  teamType: TeamType;
-}
-
-// Participant Types
 export interface Participant {
   id: number;
   teamId: number;
   participantName: string;
   isMc: boolean;
-  createdAt: string;
-  team?: Team;
   totalScore: number;
-}
-
-export interface CreateParticipantDto {
-  teamId: number;
-  participantName: string;
-  isMc?: boolean;
-}
-
-// Game Types
-export enum GameStatus {
-  WAITING = '대기',
-  IN_PROGRESS = '진행중',
-  COMPLETED = '완료',
+  createdAt: string;
 }
 
 export interface GameType {
@@ -93,25 +44,13 @@ export interface SessionGame {
   sessionId: number;
   gameTypeId: number;
   gameOrder: number;
-  status: GameStatus;
+  status: string;
   createdAt: string;
+  updatedAt: string;
   gameType?: GameType;
   gameRounds?: GameRound[];
 }
 
-export interface CreateSessionGameDto {
-  sessionId: number;
-  gameCode: string;
-  gameOrder: number;
-}
-
-export interface StartGameDto {
-  contentIds?: number[];
-  roundCount?: number;
-  teamConfigs?: TeamSpeedConfig[];
-}
-
-// Round Types
 export interface GameRound {
   id: number;
   sessionGameId: number;
@@ -121,106 +60,100 @@ export interface GameRound {
   teamId?: number;
   isAnswerRevealed: boolean;
   createdAt: string;
+  content?: Song | MediaContent | SpeedCategory;
   roundScores?: RoundScore[];
-  content?: any;
 }
 
 export interface RoundScore {
   id: number;
   roundId: number;
   teamId: number;
+  participantId?: number;
   score: number;
   correctCount?: number;
   createdAt: string;
   team?: Team;
+  participant?: Participant;
 }
 
-export interface AssignScoreDto {
-  roundId: number;
-  teamId: number;
-  participantId: number;
-  score: number;
-  correctCount?: number;
-}
-
-// Content Types
 export interface Song {
   id: number;
   youtubeUrl: string;
+  startTime: number;
   title: string;
   artist: string;
-  startTime?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface CreateSongDto {
-  youtubeUrl: string;
-  title: string;
-  artist: string;
-  startTime?: number;
-}
-
-export enum MediaType {
-  DRAMA = '드라마',
-  MOVIE = '영화',
+  createdAt: string;
 }
 
 export interface MediaContent {
-  imageUrl: any;
   id: number;
-  imagePath: string;
-  title: string;
-  mediaType: MediaType;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface CreateMediaDto {
-  imagePath: string;
   imageUrl: string;
   title: string;
-  mediaType: MediaType;
-  description?: string;
+  createdAt: string;
 }
 
 export interface SpeedCategory {
   id: number;
   categoryName: string;
-  description?: string;
+  createdAt: string;
   items?: SpeedItem[];
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface SpeedItem {
+  [x: string]: ReactNode;
   id: number;
   categoryId: number;
   itemName: string;
-  displayOrder?: number;
-  createdAt?: string;
-}
-
-export interface CreateSpeedCategoryDto {
-  categoryName: string;
-  description?: string;
-}
-
-export interface CreateSpeedItemDto {
-  categoryId: number;
-  itemName: string;
+  createdAt: string;
 }
 
 export interface ActionItem {
   id: number;
   actionName: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
 }
 
-export interface CreateActionDto {
-  actionName: string;
-  description?: string;
+export interface CreateSessionDto {
+  sessionName: string;
+  mcName: string;
+  sessionDate?: string;
+  totalParticipants?: number;
+  teamAName?: string;
+  teamBName?: string;
+}
+
+export interface UpdateSessionDto {
+  sessionName?: string;
+  mcName?: string;
+  status?: string;
+}
+
+export interface CreateTeamDto {
+  sessionId: number;
+  teamName: string;
+  teamType: string;
+}
+
+export interface CreateParticipantDto {
+  teamId: number;
+  participantName: string;
+  isMc?: boolean;
+}
+
+export interface CreateSessionGameDto {
+  sessionId: number;
+  gameCode: string;
+  gameOrder: number;
+}
+
+export interface TeamSpeedConfig {
+  teamId: number;
+  categoryId: number;
+  roundCount: number;
+}
+
+export interface StartGameDto {
+  contentIds?: number[];
+  roundCount?: number;
+  teamConfigs?: TeamSpeedConfig[];
 }
