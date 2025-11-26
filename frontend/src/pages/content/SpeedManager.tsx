@@ -59,7 +59,7 @@ export default function SpeedManager() {
     e.preventDefault();
     if (!selectedCategory || !itemName.trim()) return;
     createItemMutation.mutate({
-      categoryId: selectedCategory,
+      categoryId: Number(selectedCategory),
       itemName: itemName.trim(),
     });
   };

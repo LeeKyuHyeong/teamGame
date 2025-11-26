@@ -122,6 +122,11 @@ export interface CreateSessionDto {
   teamBName?: string;
 }
 
+export interface CreateSpeedCategoryDto {
+  categoryName: string;
+  description?: string;
+}
+
 export interface UpdateSessionDto {
   sessionName?: string;
   mcName?: string;

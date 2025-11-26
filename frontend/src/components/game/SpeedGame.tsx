@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { sessionsApi, roundsApi, speedApi, gamesApi } from '../../api';
 import type { SessionGame, Session, GameRound, SpeedItem, SpeedCategory } from '../../types';
@@ -11,7 +11,6 @@ interface SpeedGameProps {
 
 export default function SpeedGame({ game, session: sessionProp }: SpeedGameProps) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
@@ -201,7 +200,7 @@ export default function SpeedGame({ game, session: sessionProp }: SpeedGameProps
           <div className="space-y-6">
             <div className="bg-white rounded-lg p-16 text-center">
               <div className="text-6xl font-bold text-gray-900 mb-4">
-                {currentItem.itemContent}
+                {currentItem.itemName}
               </div>
               <div className="text-2xl text-gray-500">
                 {currentItemIndex + 1} / {shuffledItems.length}

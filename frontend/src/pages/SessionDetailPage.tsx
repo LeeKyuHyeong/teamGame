@@ -112,13 +112,13 @@ export default function SessionDetailPage() {
       if (selectedGameType === 'SPEED') {
         const teamConfigs: TeamSpeedConfig[] = [
           {
-            teamId: session!.teams![0].id,
-            categoryId: teamACategory,
+            teamId: Number(session!.teams![0].id),
+            categoryId: Number(teamACategory),
             roundCount: teamARounds,
           },
           {
-            teamId: session!.teams![1].id,
-            categoryId: teamBCategory,
+            teamId: Number(session!.teams![1].id),
+            categoryId: Number(teamBCategory),
             roundCount: teamBRounds,
           },
         ];
