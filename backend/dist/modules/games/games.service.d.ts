@@ -4,7 +4,6 @@ import { GameType } from '../../database/entities/game-type.entity';
 import { GameRound } from '../../database/entities/game-round.entity';
 import { Song } from '../../database/entities/song.entity';
 import { MediaContent } from '../../database/entities/media-content.entity';
-import { SpeedCategory } from '../../database/entities/speed-category.entity';
 import { CreateSessionGameDto } from './dto/create-session-game.dto';
 import { StartGameDto } from './dto/start-game.dto';
 export declare class GamesService {
@@ -13,8 +12,7 @@ export declare class GamesService {
     private readonly gameRoundRepository;
     private readonly songRepository;
     private readonly mediaRepository;
-    private readonly speedCategoryRepository;
-    constructor(sessionGameRepository: Repository<SessionGame>, gameTypeRepository: Repository<GameType>, gameRoundRepository: Repository<GameRound>, songRepository: Repository<Song>, mediaRepository: Repository<MediaContent>, speedCategoryRepository: Repository<SpeedCategory>);
+    constructor(sessionGameRepository: Repository<SessionGame>, gameTypeRepository: Repository<GameType>, gameRoundRepository: Repository<GameRound>, songRepository: Repository<Song>, mediaRepository: Repository<MediaContent>);
     addGameToSession(createDto: CreateSessionGameDto): Promise<SessionGame>;
     findBySession(sessionId: number): Promise<SessionGame[]>;
     findOne(id: number): Promise<SessionGame>;

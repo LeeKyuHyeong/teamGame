@@ -10,9 +10,6 @@ import { GameRound } from './entities/game-round.entity';
 import { RoundScore } from './entities/round-score.entity';
 import { Song } from './entities/song.entity';
 import { MediaContent } from './entities/media-content.entity';
-import { SpeedCategory } from './entities/speed-category.entity';
-import { SpeedItem } from './entities/speed-item.entity';
-import { ActionItem } from './entities/action-item.entity';
 
 @Module({
   imports: [
@@ -32,13 +29,10 @@ import { ActionItem } from './entities/action-item.entity';
           Participant,
           GameType,
           SessionGame,
-          GameRound,
+        GameRound,
           RoundScore,
           Song,
           MediaContent,
-          SpeedCategory,
-          SpeedItem,
-          ActionItem,
         ],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',

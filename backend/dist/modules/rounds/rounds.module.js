@@ -14,8 +14,6 @@ const rounds_controller_1 = require("./rounds.controller");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
-const speed_category_entity_1 = require("../../database/entities/speed-category.entity");
-const action_item_entity_1 = require("../../database/entities/action-item.entity");
 let RoundsModule = class RoundsModule {
 };
 exports.RoundsModule = RoundsModule;
@@ -26,8 +24,6 @@ exports.RoundsModule = RoundsModule = __decorate([
                 game_round_entity_1.GameRound,
                 song_entity_1.Song,
                 media_content_entity_1.MediaContent,
-                speed_category_entity_1.SpeedCategory,
-                action_item_entity_1.ActionItem,
             ]),
         ],
         controllers: [rounds_controller_1.RoundsController],

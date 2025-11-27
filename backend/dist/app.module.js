@@ -20,8 +20,6 @@ const rounds_module_1 = require("./modules/rounds/rounds.module");
 const scores_module_1 = require("./modules/scores/scores.module");
 const songs_module_1 = require("./modules/songs/songs.module");
 const media_module_1 = require("./modules/media/media.module");
-const speed_module_1 = require("./modules/speed/speed.module");
-const actions_module_1 = require("./modules/actions/actions.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -56,8 +54,6 @@ exports.AppModule = AppModule = __decorate([
             scores_module_1.ScoresModule,
             songs_module_1.SongsModule,
             media_module_1.MediaModule,
-            speed_module_1.SpeedModule,
-            actions_module_1.ActionsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

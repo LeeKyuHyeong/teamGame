@@ -30,6 +30,7 @@ export default function HomePage() {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="text-4xl mb-3">⚡</div>
           <h3 className="text-lg font-semibold mb-2">스피드 게임</h3>
+          <div className="text-xs text-gray-500">(개발 중)</div>
           <p className="text-gray-600 text-sm">
             2분 안에 유형별 항목을 최대한 많이 맞춰보세요
           </p>
@@ -38,6 +39,7 @@ export default function HomePage() {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="text-4xl mb-3">🤸</div>
           <h3 className="text-lg font-semibold mb-2">동작 게임</h3>
+          <div className="text-xs text-gray-500">(개발 중)</div>
           <p className="text-gray-600 text-sm">
             동작을 보고 맞춰보는 재미있는 게임
           </p>

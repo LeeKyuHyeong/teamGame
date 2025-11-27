@@ -6,7 +6,6 @@ import { GameType } from '../../database/entities/game-type.entity';
 import { GameRound } from '../../database/entities/game-round.entity';
 import { Song } from '../../database/entities/song.entity';
 import { MediaContent } from '../../database/entities/media-content.entity';
-import { SpeedCategory } from '../../database/entities/speed-category.entity';
 import { CreateSessionGameDto } from './dto/create-session-game.dto';
 import { StartGameDto } from './dto/start-game.dto';
 
@@ -23,8 +22,6 @@ export class GamesService {
     private readonly songRepository: Repository<Song>,
     @InjectRepository(MediaContent)
     private readonly mediaRepository: Repository<MediaContent>,
-    @InjectRepository(SpeedCategory)
-    private readonly speedCategoryRepository: Repository<SpeedCategory>,
   ) {}
 
   // 게임 추가 (세션에 게임 등록)
@@ -89,39 +86,8 @@ export class GamesService {
     let contentIds: number[] = [];
     const teamRounds: { teamId: number; contentId: number }[] = [];
 
-    // 스피드 게임 팀별 설정
-    if (startGameDto.teamConfigs && startGameDto.teamConfigs.length > 0) {
-      console.log('  - 스피드 게임 팀별 설정:', startGameDto.teamConfigs);
-      
-      for (const config of startGameDto.teamConfigs) {
-        const category = await this.speedCategoryRepository.findOne({
-          where: { id: config.categoryId },
-          relations: ['items'],
-        });
-
-        if (!category || !category.items) {
-          throw new BadRequestException(`Category ${config.categoryId} not found or has no items`);
-        }
-
-        if (category.items.length < config.roundCount) {
-          throw new BadRequestException(
-            `Not enough items in category. Requested: ${config.roundCount}, Available: ${category.items.length}`
-          );
-        }
-
-        // 팀별로 라운드 생성 (각 팀이 다른 카테고리 진행)
-        for (let i = 0; i < config.roundCount; i++) {
-          teamRounds.push({
-            teamId: config.teamId,
-            contentId: config.categoryId,
-          });
-        }
-      }
-
-      console.log('  - 생성할 팀별 라운드:', teamRounds);
-    }
     // 기존 로직 (노래, 드라마)
-    else if (startGameDto.roundCount) {
+    if (startGameDto.roundCount) {
       if (game.gameType.gameCode === 'SONG') {
         const allSongs = await this.songRepository.find();
         

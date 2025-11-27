@@ -4,8 +4,6 @@ import { Repository } from 'typeorm';
 import { GameRound } from '../../database/entities/game-round.entity';
 import { Song } from '../../database/entities/song.entity';
 import { MediaContent } from '../../database/entities/media-content.entity';
-import { SpeedCategory } from '../../database/entities/speed-category.entity';
-import { ActionItem } from '../../database/entities/action-item.entity';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { RoundWithContentDto } from './dto/round-with-content.dto';
 
@@ -18,10 +16,6 @@ export class RoundsService {
     private readonly songRepository: Repository<Song>,
     @InjectRepository(MediaContent)
     private readonly mediaRepository: Repository<MediaContent>,
-    @InjectRepository(SpeedCategory)
-    private readonly speedCategoryRepository: Repository<SpeedCategory>,
-    @InjectRepository(ActionItem)
-    private readonly actionRepository: Repository<ActionItem>,
   ) {}
 
   // 라운드 생성
@@ -63,19 +57,6 @@ export class RoundsService {
             });
             console.log(`    - MEDIA content found:`, !!content, content ? `(id=${content.id}, title=${content.title})` : '');
             break;
-          case 'SPEED':
-            content = await this.speedCategoryRepository.findOne({
-              where: { id: round.contentId },
-              relations: ['items'],
-            });
-            console.log(`    - SPEED content found:`, !!content);
-            break;
-          case 'ACTION':
-            content = await this.actionRepository.findOne({
-              where: { id: round.contentId },
-            });
-            console.log(`    - ACTION content found:`, !!content);
-            break;
         }
 
         return {
@@ -114,18 +95,7 @@ export class RoundsService {
           where: { id: round.contentId },
         });
         break;
-      case 'SPEED':
-        content = await this.speedCategoryRepository.findOne({
-          where: { id: round.contentId },
-          relations: ['items'],
-        });
-        break;
-      case 'ACTION':
-        content = await this.actionRepository.findOne({
-          where: { id: round.contentId },
-        });
-        break;
-    }
+      }
 
     // 정답이 공개되지 않은 경우 정답 정보 제거
     if (!round.isAnswerRevealed && content) {

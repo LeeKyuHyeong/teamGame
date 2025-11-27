@@ -56,7 +56,7 @@ export interface GameRound {
   teamId?: number;
   isAnswerRevealed: boolean;
   createdAt: string;
-  content?: Song | MediaContent | SpeedCategory;
+  content?: Song | MediaContent;
   roundScores?: RoundScore[];
 }
 
@@ -85,26 +85,6 @@ export interface MediaContent {
   id: number;
   imageUrl: string;
   title: string;
-  createdAt: string;
-}
-
-export interface SpeedCategory {
-  id: number;
-  categoryName: string;
-  createdAt: string;
-  items?: SpeedItem[];
-}
-
-export interface SpeedItem {
-  id: number;
-  categoryId: number;
-  itemName: string;
-  createdAt: string;
-}
-
-export interface ActionItem {
-  id: number;
-  actionName: string;
   createdAt: string;
 }
 
@@ -139,14 +119,7 @@ export interface CreateSessionGameDto {
   gameOrder: number;
 }
 
-export interface TeamSpeedConfig {
-  teamId: number;
-  categoryId: number;
-  roundCount: number;
-}
-
 export interface StartGameDto {
   contentIds?: number[];
   roundCount?: number;
-  teamConfigs?: TeamSpeedConfig[];
 }

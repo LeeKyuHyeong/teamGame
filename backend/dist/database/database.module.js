@@ -19,9 +19,6 @@ const game_round_entity_1 = require("./entities/game-round.entity");
 const round_score_entity_1 = require("./entities/round-score.entity");
 const song_entity_1 = require("./entities/song.entity");
 const media_content_entity_1 = require("./entities/media-content.entity");
-const speed_category_entity_1 = require("./entities/speed-category.entity");
-const speed_item_entity_1 = require("./entities/speed-item.entity");
-const action_item_entity_1 = require("./entities/action-item.entity");
 let DatabaseModule = class DatabaseModule {
 };
 exports.DatabaseModule = DatabaseModule;
@@ -48,9 +45,6 @@ exports.DatabaseModule = DatabaseModule = __decorate([
                         round_score_entity_1.RoundScore,
                         song_entity_1.Song,
                         media_content_entity_1.MediaContent,
-                        speed_category_entity_1.SpeedCategory,
-                        speed_item_entity_1.SpeedItem,
-                        action_item_entity_1.ActionItem,
                     ],
                     synchronize: configService.get('NODE_ENV') === 'development',
                     logging: configService.get('NODE_ENV') === 'development',

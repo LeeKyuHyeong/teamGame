@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { sessionsApi, gamesApi, songsApi, mediaApi, speedApi } from '../api';
-import type { Session, Song, MediaContent, SpeedCategory, TeamSpeedConfig } from '../types';
+import { sessionsApi, gamesApi, songsApi, mediaApi } from '../api';
+import type { Session, Song, MediaContent} from '../types';
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,12 +12,6 @@ export default function SessionDetailPage() {
   const [showGameSelect, setShowGameSelect] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState<string>('');
   const [roundCount, setRoundCount] = useState<number>(5);
-
-  // 스피드 게임 팀별 설정
-  const [teamACategory, setTeamACategory] = useState<number>(0);
-  const [teamARounds, setTeamARounds] = useState<number>(5);
-  const [teamBCategory, setTeamBCategory] = useState<number>(0);
-  const [teamBRounds, setTeamBRounds] = useState<number>(5);
 
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['sessions', sessionId],
@@ -36,13 +30,6 @@ export default function SessionDetailPage() {
     queryKey: ['media'],
     queryFn: mediaApi.getAll,
     enabled: selectedGameType === 'MEDIA',
-  });
-
-  // 스피드 카테고리 조회
-  const { data: speedCategories } = useQuery<SpeedCategory[]>({
-    queryKey: ['speed-categories'],
-    queryFn: speedApi.getAllCategories,
-    enabled: selectedGameType === 'SPEED',
   });
 
   // 최대 라운드 수 설정
@@ -85,22 +72,7 @@ export default function SessionDetailPage() {
         alert(`라운드 수는 1~${mediaList.length} 사이여야 합니다.`);
         return;
       }
-    } else if (selectedGameType === 'SPEED') {
-      if (!speedCategories || speedCategories.length === 0) {
-        alert('등록된 스피드 게임 유형이 없습니다.');
-        return;
-      }
-
-      if (teamACategory === 0 || teamBCategory === 0) {
-        alert('양 팀의 게임 유형을 모두 선택해주세요.');
-        return;
-      }
-
-      if (!session?.teams || session.teams.length < 2) {
-        alert('팀 정보를 찾을 수 없습니다.');
-        return;
-      }
-    }
+    } 
 
     try {
       const game = await gamesApi.create({
@@ -108,25 +80,8 @@ export default function SessionDetailPage() {
         gameCode: selectedGameType,
         gameOrder: (session?.sessionGames?.length || 0) + 1,
       });
-
-      if (selectedGameType === 'SPEED') {
-        const teamConfigs: TeamSpeedConfig[] = [
-          {
-            teamId: Number(session!.teams![0].id),
-            categoryId: Number(teamACategory),
-            roundCount: teamARounds,
-          },
-          {
-            teamId: Number(session!.teams![1].id),
-            categoryId: Number(teamBCategory),
-            roundCount: teamBRounds,
-          },
-        ];
-
-        await gamesApi.start(game.id, { teamConfigs });
-      } else {
-        await gamesApi.start(game.id, { roundCount });
-      }
+     
+      await gamesApi.start(game.id, { roundCount });
 
       navigate(`/sessions/${sessionId}/games/${game.id}`);
     } catch (error) {
@@ -276,6 +231,7 @@ export default function SessionDetailPage() {
                 >
                   <div className="text-4xl mb-2">⚡</div>
                   <div className="font-semibold">스피드 게임</div>
+                  <div className="text-xs text-gray-500">(개발 중)</div>
                 </button>
                 <button
                   disabled
@@ -283,7 +239,7 @@ export default function SessionDetailPage() {
                 >
                   <div className="text-4xl mb-2">🤸</div>
                   <div className="font-semibold">동작 게임</div>
-                  <div className="text-xs text-gray-500">(준비 중)</div>
+                  <div className="text-xs text-gray-500">(개발 중)</div>
                 </button>
               </div>
             ) : (
@@ -428,145 +384,6 @@ export default function SessionDetailPage() {
                   </div>
                 )}
 
-                {selectedGameType === 'SPEED' && (
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-4">
-                      ⚡ 스피드 게임 설정
-                    </h3>
-
-                    <p className="text-sm text-gray-600 mb-6">
-                      각 팀이 다른 유형의 게임을 진행합니다. 2분 안에 최대한 많은 정답을 맞추세요!
-                    </p>
-
-                    {(!speedCategories || speedCategories.length === 0) && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                        <p className="text-yellow-800">
-                          등록된 스피드 게임 유형이 없습니다.
-                          <Link to="/content" className="underline ml-2">
-                            콘텐츠 관리로 이동 →
-                          </Link>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* 팀별 설정 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      {/* A팀 설정 */}
-                      <div className="bg-white p-4 rounded-lg border-2 border-blue-200">
-                        <h4 className="font-semibold text-blue-600 mb-3">
-                          {session?.teams?.[0]?.teamName || 'A팀'}
-                        </h4>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              게임 유형
-                            </label>
-                            <select
-                              value={teamACategory}
-                              onChange={(e) => setTeamACategory(parseInt(e.target.value))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            >
-                              <option value={0}>선택하세요</option>
-                              {speedCategories?.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                  {cat.categoryName} ({cat.items?.length || 0}개)
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              라운드 수
-                            </label>
-                            <input
-                              type="number"
-                              value={teamARounds}
-                              onChange={(e) => setTeamARounds(parseInt(e.target.value) || 1)}
-                              min={1}
-                              max={speedCategories?.find(c => c.id === teamACategory)?.items?.length || 50}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              2분 동안 진행됩니다
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* B팀 설정 */}
-                      <div className="bg-white p-4 rounded-lg border-2 border-pink-200">
-                        <h4 className="font-semibold text-pink-600 mb-3">
-                          {session?.teams?.[1]?.teamName || 'B팀'}
-                        </h4>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              게임 유형
-                            </label>
-                            <select
-                              value={teamBCategory}
-                              onChange={(e) => setTeamBCategory(parseInt(e.target.value))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            >
-                              <option value={0}>선택하세요</option>
-                              {speedCategories?.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                  {cat.categoryName} ({cat.items?.length || 0}개)
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              라운드 수
-                            </label>
-                            <input
-                              type="number"
-                              value={teamBRounds}
-                              onChange={(e) => setTeamBRounds(parseInt(e.target.value) || 1)}
-                              min={1}
-                              max={speedCategories?.find(c => c.id === teamBCategory)?.items?.length || 50}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              2분 동안 진행됩니다
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => {
-                          setShowGameSelect(false);
-                          setSelectedGameType('');
-                        }}
-                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={handleStartGame}
-                        disabled={
-                          !speedCategories || 
-                          speedCategories.length === 0 || 
-                          teamACategory === 0 || 
-                          teamBCategory === 0
-                        }
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        게임 시작
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                
                   </div>
                 )}
               </div>

@@ -16,13 +16,12 @@ const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
-const speed_category_entity_1 = require("../../database/entities/speed-category.entity");
 let GamesModule = class GamesModule {
 };
 exports.GamesModule = GamesModule;
 exports.GamesModule = GamesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([session_game_entity_1.SessionGame, game_type_entity_1.GameType, game_round_entity_1.GameRound, song_entity_1.Song, media_content_entity_1.MediaContent, speed_category_entity_1.SpeedCategory])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([session_game_entity_1.SessionGame, game_type_entity_1.GameType, game_round_entity_1.GameRound, song_entity_1.Song, media_content_entity_1.MediaContent])],
         controllers: [games_controller_1.GamesController],
         providers: [games_service_1.GamesService],
         exports: [games_service_1.GamesService],

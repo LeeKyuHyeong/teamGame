@@ -4,8 +4,6 @@ import { gamesApi, sessionsApi } from '../api';
 import type { SessionGame, Session } from '../types';
 import SongGame from '../components/game/SongGame';
 import MediaGame from '../components/game/MediaGame';
-import SpeedGame from '../components/game/SpeedGame';
-import ActionGame from '../components/game/ActionGame';
 
 export default function GamePlayPage() {
   const { sessionId, gameId } = useParams();
@@ -55,10 +53,6 @@ export default function GamePlayPage() {
         return <SongGame game={game} session={session} />;
       case 'MEDIA':
         return <MediaGame game={game} session={session} />;
-      case 'SPEED':
-        return <SpeedGame game={game} session={session} />;
-      case 'ACTION':
-        return <ActionGame game={game} session={session} />;
       default:
         return <div>알 수 없는 게임 타입입니다.</div>;
     }

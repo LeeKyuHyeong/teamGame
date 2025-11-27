@@ -19,20 +19,14 @@ const typeorm_2 = require("typeorm");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
-const speed_category_entity_1 = require("../../database/entities/speed-category.entity");
-const action_item_entity_1 = require("../../database/entities/action-item.entity");
 let RoundsService = class RoundsService {
     roundRepository;
     songRepository;
     mediaRepository;
-    speedCategoryRepository;
-    actionRepository;
-    constructor(roundRepository, songRepository, mediaRepository, speedCategoryRepository, actionRepository) {
+    constructor(roundRepository, songRepository, mediaRepository) {
         this.roundRepository = roundRepository;
         this.songRepository = songRepository;
         this.mediaRepository = mediaRepository;
-        this.speedCategoryRepository = speedCategoryRepository;
-        this.actionRepository = actionRepository;
     }
     async create(createRoundDto) {
         const round = this.roundRepository.create(createRoundDto);
@@ -64,19 +58,6 @@ let RoundsService = class RoundsService {
                     });
                     console.log(`    - MEDIA content found:`, !!content, content ? `(id=${content.id}, title=${content.title})` : '');
                     break;
-                case 'SPEED':
-                    content = await this.speedCategoryRepository.findOne({
-                        where: { id: round.contentId },
-                        relations: ['items'],
-                    });
-                    console.log(`    - SPEED content found:`, !!content);
-                    break;
-                case 'ACTION':
-                    content = await this.actionRepository.findOne({
-                        where: { id: round.contentId },
-                    });
-                    console.log(`    - ACTION content found:`, !!content);
-                    break;
             }
             return {
                 ...round,
@@ -103,17 +84,6 @@ let RoundsService = class RoundsService {
                 break;
             case 'MEDIA':
                 content = await this.mediaRepository.findOne({
-                    where: { id: round.contentId },
-                });
-                break;
-            case 'SPEED':
-                content = await this.speedCategoryRepository.findOne({
-                    where: { id: round.contentId },
-                    relations: ['items'],
-                });
-                break;
-            case 'ACTION':
-                content = await this.actionRepository.findOne({
                     where: { id: round.contentId },
                 });
                 break;
@@ -183,11 +153,7 @@ exports.RoundsService = RoundsService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(game_round_entity_1.GameRound)),
     __param(1, (0, typeorm_1.InjectRepository)(song_entity_1.Song)),
     __param(2, (0, typeorm_1.InjectRepository)(media_content_entity_1.MediaContent)),
-    __param(3, (0, typeorm_1.InjectRepository)(speed_category_entity_1.SpeedCategory)),
-    __param(4, (0, typeorm_1.InjectRepository)(action_item_entity_1.ActionItem)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], RoundsService);

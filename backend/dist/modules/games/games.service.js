@@ -21,21 +21,18 @@ const game_type_entity_1 = require("../../database/entities/game-type.entity");
 const game_round_entity_1 = require("../../database/entities/game-round.entity");
 const song_entity_1 = require("../../database/entities/song.entity");
 const media_content_entity_1 = require("../../database/entities/media-content.entity");
-const speed_category_entity_1 = require("../../database/entities/speed-category.entity");
 let GamesService = class GamesService {
     sessionGameRepository;
     gameTypeRepository;
     gameRoundRepository;
     songRepository;
     mediaRepository;
-    speedCategoryRepository;
-    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository, mediaRepository, speedCategoryRepository) {
+    constructor(sessionGameRepository, gameTypeRepository, gameRoundRepository, songRepository, mediaRepository) {
         this.sessionGameRepository = sessionGameRepository;
         this.gameTypeRepository = gameTypeRepository;
         this.gameRoundRepository = gameRoundRepository;
         this.songRepository = songRepository;
         this.mediaRepository = mediaRepository;
-        this.speedCategoryRepository = speedCategoryRepository;
     }
     async addGameToSession(createDto) {
         const gameType = await this.gameTypeRepository.findOne({
@@ -82,29 +79,7 @@ let GamesService = class GamesService {
         await this.sessionGameRepository.save(game);
         let contentIds = [];
         const teamRounds = [];
-        if (startGameDto.teamConfigs && startGameDto.teamConfigs.length > 0) {
-            console.log('  - 스피드 게임 팀별 설정:', startGameDto.teamConfigs);
-            for (const config of startGameDto.teamConfigs) {
-                const category = await this.speedCategoryRepository.findOne({
-                    where: { id: config.categoryId },
-                    relations: ['items'],
-                });
-                if (!category || !category.items) {
-                    throw new common_1.BadRequestException(`Category ${config.categoryId} not found or has no items`);
-                }
-                if (category.items.length < config.roundCount) {
-                    throw new common_1.BadRequestException(`Not enough items in category. Requested: ${config.roundCount}, Available: ${category.items.length}`);
-                }
-                for (let i = 0; i < config.roundCount; i++) {
-                    teamRounds.push({
-                        teamId: config.teamId,
-                        contentId: config.categoryId,
-                    });
-                }
-            }
-            console.log('  - 생성할 팀별 라운드:', teamRounds);
-        }
-        else if (startGameDto.roundCount) {
+        if (startGameDto.roundCount) {
             if (game.gameType.gameCode === 'SONG') {
                 const allSongs = await this.songRepository.find();
                 if (allSongs.length < startGameDto.roundCount) {
@@ -194,9 +169,7 @@ exports.GamesService = GamesService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(game_round_entity_1.GameRound)),
     __param(3, (0, typeorm_1.InjectRepository)(song_entity_1.Song)),
     __param(4, (0, typeorm_1.InjectRepository)(media_content_entity_1.MediaContent)),
-    __param(5, (0, typeorm_1.InjectRepository)(speed_category_entity_1.SpeedCategory)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

@@ -2,10 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SongsManager from './SongsManager';
 import MediaManager from './MediaManager';
-import SpeedManager from './SpeedManager';
-import ActionsManager from './ActionsManager';
 
-type TabType = 'songs' | 'media' | 'speed' | 'actions';
+type TabType = 'songs' | 'media';
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState<TabType>('songs');
@@ -13,8 +11,6 @@ export default function ContentManagementPage() {
   const tabs = [
     { id: 'songs' as TabType, name: '노래 맞추기', icon: '🎵' },
     { id: 'media' as TabType, name: '드라마/영화', icon: '🎬' },
-    { id: 'speed' as TabType, name: '스피드 게임', icon: '⚡' },
-    { id: 'actions' as TabType, name: '동작 게임', icon: '🤸' },
   ];
 
   return (
@@ -54,8 +50,6 @@ export default function ContentManagementPage() {
         <div className="p-6">
           {activeTab === 'songs' && <SongsManager />}
           {activeTab === 'media' && <MediaManager />}
-          {activeTab === 'speed' && <SpeedManager />}
-          {activeTab === 'actions' && <ActionsManager />}
         </div>
       </div>
     </div>

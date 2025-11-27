@@ -11,8 +11,6 @@ import { RoundsModule } from './modules/rounds/rounds.module';
 import { ScoresModule } from './modules/scores/scores.module';
 import { SongsModule } from './modules/songs/songs.module';
 import { MediaModule } from './modules/media/media.module';
-import { SpeedModule } from './modules/speed/speed.module';
-import { ActionsModule } from './modules/actions/actions.module';
 
 @Module({
   imports: [
@@ -44,8 +42,6 @@ import { ActionsModule } from './modules/actions/actions.module';
     ScoresModule,
     SongsModule,
     MediaModule,
-    SpeedModule,
-    ActionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
