@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { roundsApi, scoresApi, gamesApi, sessionsApi } from '../../api';
 import type { SessionGame, Session, GameRound, Participant } from '../../types';
+import { isMediaContent } from '../../types';
 
 interface Props {
   game: SessionGame;
@@ -55,34 +56,6 @@ export default function MediaGame({ game, session: sessionProp }: Props) {
     console.log('error:', error);
   }, [game, isLoading, error]);
 
-  useEffect(() => {
-    console.log('=== Rounds 데이터 상세 ===');
-    console.log('Rounds 데이터:', rounds);
-    console.log('Rounds 타입:', Array.isArray(rounds));
-    console.log('Rounds 길이:', rounds?.length);
-    console.log('현재 라운드 인덱스:', currentRoundIndex);
-    
-    if (rounds && rounds.length > 0) {
-      console.log('전체 rounds:', rounds);
-      console.log('현재 라운드:', rounds[currentRoundIndex]);
-      console.log('현재 라운드 content:', rounds[currentRoundIndex]?.content);
-      
-      const currentRound = rounds[currentRoundIndex];
-      if (currentRound) {
-        console.log('currentRound.id:', currentRound.id);
-        console.log('currentRound.contentId:', currentRound.contentId);
-        console.log('currentRound.contentType:', currentRound.contentType);
-        console.log('currentRound.content:', currentRound.content);
-        
-        if (currentRound.content) {
-          console.log('content.id:', currentRound.content.id);
-          console.log('content.imageUrl:', currentRound.content.imageUrl);
-          console.log('content.title:', currentRound.content.title);
-        }
-      }
-    }
-  }, [rounds, currentRoundIndex]);
-
   const scoreMutation = useMutation({
     mutationFn: scoresApi.assignScore,
     onSuccess: () => {
@@ -99,7 +72,9 @@ export default function MediaGame({ game, session: sessionProp }: Props) {
   });
 
   const currentRound = rounds?.[currentRoundIndex];
-  const media = currentRound?.content;
+  const media = (currentRound?.content && isMediaContent(currentRound.content))
+    ? currentRound.content
+    : undefined;
 
   const handleParticipantClick = (participant: Participant) => {
     if (answered || !currentRound) return;

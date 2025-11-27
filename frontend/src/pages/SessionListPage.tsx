@@ -9,6 +9,17 @@ export default function SessionListPage() {
     queryFn: sessionsApi.getAll,
   });
 
+  // 세션의 실제 참가자 수 계산 (MC 제외)
+  const getParticipantCount = (session: Session): number => {
+    if (!session.teams) return 0;
+    
+    return session.teams.reduce((total, team) => {
+      const nonMcParticipants = team.participants?.filter(p => !p.isMc).length || 0;
+      return total + nonMcParticipants;
+    }, 0);
+  };
+  sessionsApi.getDetail
+
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -79,7 +90,7 @@ export default function SessionListPage() {
                 </p>
                 <p>
                   <span className="font-medium">참가자:</span>{' '}
-                  {session.teams?.length}명
+                  {getParticipantCount(session)}명
                 </p>
                 <p>
                   <span className="font-medium">날짜:</span>{' '}

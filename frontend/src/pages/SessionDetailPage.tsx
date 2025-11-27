@@ -226,8 +226,8 @@ export default function SessionDetailPage() {
                   <div className="font-semibold">드라마/영화</div>
                 </button>
                 <button
-                  onClick={() => handleGameSelect('SPEED')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition"
+                  disabled
+                  className="p-6 border-2 border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
                 >
                   <div className="text-4xl mb-2">⚡</div>
                   <div className="font-semibold">스피드 게임</div>

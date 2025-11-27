@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { roundsApi, scoresApi, gamesApi, sessionsApi } from '../../api';
 import type { SessionGame, Session, GameRound, Participant } from '../../types';
+import { isSong } from '../../types';
 
 interface Props {
   game: SessionGame;
@@ -13,6 +14,13 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const playerRef = useRef<any>(null);
+  
+  // 받은 props 확인
+  console.log('=== SongGame Props ===');
+  console.log('game prop:', game);
+  console.log('session prop:', sessionProp);
+  console.log('session prop 타입:', typeof sessionProp);
+  console.log('session prop이 있는가:', !!sessionProp);
   
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,9 +39,9 @@ export default function SongGame({ game, session: sessionProp }: Props) {
   // session prop이 있으면 그걸 쓰고, 없으면 직접 조회한 것 사용
   const session = sessionProp || sessionFromQuery;
 
-  // 세션 로드 시 초기 팀 점수 계산
+  // 세션 최초 로드 시에만 초기 팀 점수 계산
   useEffect(() => {
-    if (session?.teams) {
+    if (session?.teams && Object.keys(teamScores).length === 0) {
       const scores: { [teamId: number]: number } = {};
       session.teams.forEach(team => {
         const teamScore = team.participants
@@ -41,14 +49,50 @@ export default function SongGame({ game, session: sessionProp }: Props) {
           .reduce((sum, p) => sum + (p.totalScore || 0), 0) || 0;
         scores[team.id] = teamScore;
       });
+      console.log('초기 팀 점수 설정:', scores);
       setTeamScores(scores);
     }
-  }, [session]);
+  }, [session, teamScores]);
+
+  console.log('=== 최종 사용할 session ===');
+  console.log('session:', session);
+  console.log('session.teams:', session?.teams);
 
   const { data: rounds, isLoading } = useQuery<GameRound[]>({
     queryKey: ['rounds', game.id],
     queryFn: () => roundsApi.getByGame(game.id),
   });
+
+  // 디버깅
+  useEffect(() => {
+    console.log('=== Rounds 데이터 상세 ===');
+    console.log('Rounds 데이터:', rounds);
+    console.log('Rounds 타입:', Array.isArray(rounds));
+    console.log('Rounds 길이:', rounds?.length);
+    console.log('현재 라운드 인덱스:', currentRoundIndex);
+    
+    if (rounds && rounds.length > 0) {
+      console.log('전체 rounds:', rounds);
+      console.log('현재 라운드:', rounds[currentRoundIndex]);
+      console.log('현재 라운드 content:', rounds[currentRoundIndex]?.content);
+      
+      const currentRound = rounds[currentRoundIndex];
+      if (currentRound) {
+        console.log('currentRound.id:', currentRound.id);
+        console.log('currentRound.contentId:', currentRound.contentId);
+        console.log('currentRound.contentType:', currentRound.contentType);
+        console.log('currentRound.content:', currentRound.content);
+        
+        if (currentRound.content && isSong(currentRound.content)) {
+          const song = currentRound.content;
+          console.log('content.id:', song.id);
+          console.log('content.youtubeUrl:', song.youtubeUrl);
+          console.log('content.title:', song.title);
+          console.log('content.artist:', song.artist);
+        }
+      }
+    }
+  }, [rounds, currentRoundIndex]);
 
   const scoreMutation = useMutation({
     mutationFn: scoresApi.assignScore,
@@ -56,41 +100,6 @@ export default function SongGame({ game, session: sessionProp }: Props) {
       queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
     },
   });
-
-  // const scoreMutation = useMutation({    
-  //   mutationFn: scoresApi.assignScore,
-  //   onMutate: async (newScore) => {
-  //     await queryClient.cancelQueries({ queryKey: ['sessions', game.sessionId] });
-  //     console.log('scoreMuation');
-  //     const previousSession = queryClient.getQueryData(['sessions', game.sessionId]);
-      
-  //     queryClient.setQueryData(['sessions', game.sessionId], (old: Session | undefined) => {
-  //       if (!old) return old;
-        
-  //       return {
-  //         ...old,
-  //         teams: old.teams?.map(team => ({
-  //           ...team,
-  //           participants: team.participants?.map(p => 
-  //             p.id === newScore.participantId 
-  //               ? { ...p, totalScore: (p.totalScore || 0) + newScore.score }
-  //               : p
-  //           ),
-  //         })),
-  //       };
-  //     });
-      
-  //     return { previousSession };
-  //   },
-  //   onError: (_err, _newScore, context) => {
-  //     if (context?.previousSession) {
-  //       queryClient.setQueryData(['sessions', game.sessionId], context.previousSession);
-  //     }
-  //   },
-  //   onSettled: () => {
-  //     queryClient.invalidateQueries({ queryKey: ['sessions', game.sessionId] });
-  //   },
-  // });
 
   const completeGameMutation = useMutation({
     mutationFn: () => gamesApi.complete(game.id),
@@ -135,7 +144,9 @@ export default function SongGame({ game, session: sessionProp }: Props) {
 
   // 현재 라운드
   const currentRound = rounds?.[currentRoundIndex];
-  const song = currentRound?.content;
+  const song = (currentRound?.content && isSong(currentRound.content)) 
+    ? currentRound.content 
+    : undefined;
 
   // YouTube 비디오 ID 추출
   const getVideoId = (url: string) => {
@@ -246,17 +257,19 @@ export default function SongGame({ game, session: sessionProp }: Props) {
       console.log('팀 점수 업데이트:', newScores);
       return newScores;
     });
-    
-    scoreMutation.mutate({
-      roundId: Number(currentRound.id),
-      teamId: Number(participant.teamId),
-      participantId: Number(participant.id),
-      score: 10,
-    });
 
+    // 정답 상태 먼저 업데이트
     setAnswered(true);
     setWinner(participant);
     handlePause();
+
+    // DB 업데이트는 비동기로
+    scoreMutation.mutate({
+      roundId: currentRound.id,
+      teamId: participant.teamId,
+      participantId: participant.id,
+      score: 10,
+    });
   };
 
   const handleNextRound = () => {
@@ -395,21 +408,24 @@ export default function SongGame({ game, session: sessionProp }: Props) {
 
         {/* 팀 점수판 */}
         <div className="grid grid-cols-2 gap-6 mb-8">
-          {session?.teams?.map((team) => (
-            <div
-              key={team.id}
-              className={`p-6 rounded-lg ${
-                team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
-              }`}
-            >
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">{team.teamName}</h3>
-                <div className="text-4xl font-bold">{teamScores[team.id] || 0}</div>
+          {session?.teams?.map((team) => {
+            const score = teamScores[team.id] || 0;
+            console.log(`팀 ${team.teamName} 렌더링: ${score}점`);
+            return (
+              <div
+                key={team.id}
+                className={`p-6 rounded-lg ${
+                  team.teamName === 'A팀' ? 'bg-blue-900' : 'bg-pink-900'
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-bold">{team.teamName}</h3>
+                  <div className="text-4xl font-bold">{score}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        
       </div>
 
       {/* 메인 콘텐츠 */}

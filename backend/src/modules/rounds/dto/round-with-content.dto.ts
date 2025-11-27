@@ -5,7 +5,7 @@ export class RoundWithContentDto {
   contentId: number;
   contentType: string;
   isAnswerRevealed: boolean;
-  content?: any; // Song | MediaContent | SpeedCategory | ActionItem
+  content?: any;
   scores?: {
     teamId: number;
     teamName: string;

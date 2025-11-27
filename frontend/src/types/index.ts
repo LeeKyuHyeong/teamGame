@@ -81,11 +81,23 @@ export interface Song {
   createdAt: string;
 }
 
+export interface CreateSongDto {
+  youtubeUrl: string;
+  startTime: number;
+  title: string;
+  artist: string;
+}
+
 export interface MediaContent {
   id: number;
   imageUrl: string;
   title: string;
   createdAt: string;
+}
+
+export interface CreateMediaContentDto {
+  imageUrl: string;
+  title: string;
 }
 
 export interface CreateSessionDto {
@@ -122,4 +134,21 @@ export interface CreateSessionGameDto {
 export interface StartGameDto {
   contentIds?: number[];
   roundCount?: number;
+}
+
+// 타입 가드 헬퍼 함수
+export function isSong(content: Song | MediaContent): content is Song {
+  return 'youtubeUrl' in content;
+}
+
+export function isMediaContent(content: Song | MediaContent): content is MediaContent {
+  return 'imageUrl' in content;
+}
+
+export interface AssignScoreDto {
+  roundId: number;
+  teamId: number;
+  participantId?: number;
+  score: number;
+  correctCount?: number;
 }
