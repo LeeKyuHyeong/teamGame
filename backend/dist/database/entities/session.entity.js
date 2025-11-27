@@ -25,7 +25,6 @@ let Session = class Session {
     sessionDate;
     mcName;
     status;
-    totalParticipants;
     createdAt;
     updatedAt;
     teams;
@@ -33,7 +32,7 @@ let Session = class Session {
 };
 exports.Session = Session;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], Session.prototype, "id", void 0);
 __decorate([
@@ -60,10 +59,6 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], Session.prototype, "status", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'int', default: 15, name: 'total_participants' }),
-    __metadata("design:type", Number)
-], Session.prototype, "totalParticipants", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

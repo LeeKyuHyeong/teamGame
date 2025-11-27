@@ -9,7 +9,7 @@ import { SessionGame } from './session-game.entity';
 
 @Entity('game_types')
 export class GameType {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 20, unique: true, name: 'game_code' })

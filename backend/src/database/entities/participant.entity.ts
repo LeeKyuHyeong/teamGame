@@ -12,10 +12,10 @@ import { RoundScore } from './round-score.entity';
 
 @Entity('participants')
 export class Participant {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
-  @Column({ type: 'bigint', name: 'team_id' })
+  @Column({ type: 'int', name: 'team_id' })
   teamId: number;
 
   @Column({ type: 'varchar', length: 50, name: 'participant_name' })

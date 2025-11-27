@@ -13,7 +13,7 @@ export enum MediaType {
 
 @Entity('media_contents')
 export class MediaContent {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 255, name: 'image_url' })

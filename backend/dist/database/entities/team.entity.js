@@ -9,21 +9,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Team = exports.TeamType = void 0;
+exports.Team = void 0;
 const typeorm_1 = require("typeorm");
 const session_entity_1 = require("./session.entity");
 const participant_entity_1 = require("./participant.entity");
 const round_score_entity_1 = require("./round-score.entity");
-var TeamType;
-(function (TeamType) {
-    TeamType["MALE"] = "\uB0A8\uC131";
-    TeamType["FEMALE"] = "\uC5EC\uC131";
-})(TeamType || (exports.TeamType = TeamType = {}));
 let Team = class Team {
     id;
     sessionId;
     teamName;
-    teamType;
     totalScore;
     createdAt;
     session;
@@ -32,21 +26,17 @@ let Team = class Team {
 };
 exports.Team = Team;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], Team.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'session_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'session_id' }),
     __metadata("design:type", Number)
 ], Team.prototype, "sessionId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 50, name: 'team_name' }),
     __metadata("design:type", String)
 ], Team.prototype, "teamName", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: TeamType, name: 'team_type' }),
-    __metadata("design:type", String)
-], Team.prototype, "teamType", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'int', default: 0, name: 'total_score' }),
     __metadata("design:type", Number)

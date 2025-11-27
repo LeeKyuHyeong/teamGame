@@ -22,7 +22,7 @@ let GameType = class GameType {
 };
 exports.GameType = GameType;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], GameType.prototype, "id", void 0);
 __decorate([

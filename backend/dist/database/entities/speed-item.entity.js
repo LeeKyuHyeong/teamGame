@@ -22,11 +22,11 @@ let SpeedItem = class SpeedItem {
 };
 exports.SpeedItem = SpeedItem;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], SpeedItem.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'category_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'category_id' }),
     __metadata("design:type", Number)
 ], SpeedItem.prototype, "categoryId", void 0);
 __decorate([

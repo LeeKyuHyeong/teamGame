@@ -25,11 +25,11 @@ let Participant = class Participant {
 };
 exports.Participant = Participant;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], Participant.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'team_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'team_id' }),
     __metadata("design:type", Number)
 ], Participant.prototype, "teamId", void 0);
 __decorate([

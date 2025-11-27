@@ -17,7 +17,7 @@ export enum SessionStatus {
 
 @Entity('sessions')
 export class Session {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 100, name: 'session_name' })
@@ -39,9 +39,6 @@ export class Session {
     default: SessionStatus.READY,
   })
   status: SessionStatus;
-
-  @Column({ type: 'int', default: 15, name: 'total_participants' })
-  totalParticipants: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -218,7 +218,7 @@ export default function SessionDetailPage() {
               </div>
 
               <div className="mb-2 text-sm text-gray-600">
-                {team.teamType} • {team.participants?.filter(p => !p.isMc).length || 0}명
+                {team.teamName} • {team.participants?.filter(p => !p.isMc).length || 0}명
               </div>
 
               <div className="space-y-2">

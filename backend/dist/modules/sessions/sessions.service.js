@@ -17,17 +17,34 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const session_entity_1 = require("../../database/entities/session.entity");
+const team_entity_1 = require("../../database/entities/team.entity");
 let SessionsService = class SessionsService {
     sessionRepository;
-    constructor(sessionRepository) {
+    teamRepository;
+    constructor(sessionRepository, teamRepository) {
         this.sessionRepository = sessionRepository;
+        this.teamRepository = teamRepository;
     }
     async create(createSessionDto) {
         const session = this.sessionRepository.create({
             ...createSessionDto,
             status: session_entity_1.SessionStatus.READY,
         });
-        return await this.sessionRepository.save(session);
+        const savedSession = await this.sessionRepository.save(session);
+        const teamAName = createSessionDto.teamAName || 'A팀';
+        const teamBName = createSessionDto.teamBName || 'B팀';
+        const teamA = this.teamRepository.create({
+            sessionId: savedSession.id,
+            teamName: teamAName,
+            totalScore: 0,
+        });
+        const teamB = this.teamRepository.create({
+            sessionId: savedSession.id,
+            teamName: teamBName,
+            totalScore: 0,
+        });
+        await this.teamRepository.save([teamA, teamB]);
+        return await this.findOne(savedSession.id);
     }
     async findAll() {
         return await this.sessionRepository.find({
@@ -36,6 +53,7 @@ let SessionsService = class SessionsService {
         });
     }
     async findOne(id) {
+        console.log(`[SessionsService] findOne 호출 - ID: ${id}`);
         const session = await this.sessionRepository.findOne({
             where: { id },
             relations: ['teams', 'teams.participants', 'sessionGames'],
@@ -43,11 +61,16 @@ let SessionsService = class SessionsService {
         if (!session) {
             throw new common_1.NotFoundException(`Session with ID ${id} not found`);
         }
+        console.log(`[SessionsService] 세션 조회 성공:`);
+        console.log(`  - sessionName: ${session.sessionName}`);
+        console.log(`  - teams 개수: ${session.teams?.length || 0}`);
         if (session.teams && session.teams.length > 0) {
             session.teams.forEach((team, index) => {
+                console.log(`  - Team ${index}: ${team.teamName}, participants: ${team.participants?.length || 0}개`);
             });
         }
         else {
+            console.log(`  ⚠️ teams가 비어있음!`);
         }
         return session;
     }
@@ -76,13 +99,11 @@ let SessionsService = class SessionsService {
             sessionDate: session.sessionDate,
             mcName: session.mcName,
             status: session.status,
-            totalParticipants: session.totalParticipants,
             createdAt: session.createdAt,
             updatedAt: session.updatedAt,
             teams: session.teams?.map((team) => ({
                 id: team.id,
                 teamName: team.teamName,
-                teamType: team.teamType,
                 totalScore: team.totalScore,
                 participantCount: team.participants?.length || 0,
             })),
@@ -93,6 +114,8 @@ exports.SessionsService = SessionsService;
 exports.SessionsService = SessionsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(session_entity_1.Session)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(team_entity_1.Team)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], SessionsService);
 //# sourceMappingURL=sessions.service.js.map

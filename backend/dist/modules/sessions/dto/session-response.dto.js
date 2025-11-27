@@ -7,7 +7,6 @@ class SessionResponseDto {
     sessionDate;
     mcName;
     status;
-    totalParticipants;
     createdAt;
     updatedAt;
     teams;
@@ -16,7 +15,6 @@ exports.SessionResponseDto = SessionResponseDto;
 class TeamSummaryDto {
     id;
     teamName;
-    teamType;
     totalScore;
     participantCount;
 }

@@ -28,19 +28,19 @@ let RoundScore = class RoundScore {
 };
 exports.RoundScore = RoundScore;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], RoundScore.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'round_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'round_id' }),
     __metadata("design:type", Number)
 ], RoundScore.prototype, "roundId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'team_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'team_id' }),
     __metadata("design:type", Number)
 ], RoundScore.prototype, "teamId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'participant_id', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'participant_id', nullable: true }),
     __metadata("design:type", Number)
 ], RoundScore.prototype, "participantId", void 0);
 __decorate([
@@ -77,7 +77,6 @@ __decorate([
     __metadata("design:type", participant_entity_1.Participant)
 ], RoundScore.prototype, "participant", void 0);
 exports.RoundScore = RoundScore = __decorate([
-    (0, typeorm_1.Entity)('round_scores'),
-    (0, typeorm_1.Unique)(['roundId', 'teamId'])
+    (0, typeorm_1.Entity)('round_scores')
 ], RoundScore);
 //# sourceMappingURL=round-score.entity.js.map

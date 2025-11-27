@@ -79,7 +79,7 @@ export default function SessionListPage() {
                 </p>
                 <p>
                   <span className="font-medium">참가자:</span>{' '}
-                  {session.totalParticipants}명
+                  {session.teams?.length}명
                 </p>
                 <p>
                   <span className="font-medium">날짜:</span>{' '}

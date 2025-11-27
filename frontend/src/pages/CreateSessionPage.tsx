@@ -10,7 +10,6 @@ export default function CreateSessionPage() {
 
   const [sessionName, setSessionName] = useState('');
   const [mcName, setMcName] = useState('');
-  const [totalParticipants, setTotalParticipants] = useState(14);
   const [teamAName, setTeamAName] = useState('A팀');
   const [teamBName, setTeamBName] = useState('B팀');
   
@@ -20,12 +19,26 @@ export default function CreateSessionPage() {
   const createSessionMutation = useMutation({
     mutationFn: sessionsApi.create,
     onSuccess: async (session) => {
+      console.log('세션 생성 완료:', session);
+      
       // 팀은 Backend에서 자동 생성되므로 조회
       const fullSession = await sessionsApi.getOne(session.id);
+      console.log('전체 세션 조회:', fullSession);
+      console.log('팀 목록:', fullSession.teams);
+      
+      if (!fullSession.teams || fullSession.teams.length === 0) {
+        alert('팀이 생성되지 않았습니다. 다시 시도해주세요.');
+        throw new Error('팀 생성에 실패했습니다.');
+      }
+
       const teamA = fullSession.teams?.find(t => t.teamName === teamAName);
       const teamB = fullSession.teams?.find(t => t.teamName === teamBName);
 
+      console.log('teamA 찾기 결과:', teamA);
+      console.log('teamB 찾기 결과:', teamB);
+
       if (!teamA || !teamB) {
+        alert(`팀을 찾을 수 없습니다. teamA: ${teamA?.teamName}, teamB: ${teamB?.teamName}`);
         throw new Error('팀 생성에 실패했습니다.');
       }
 
@@ -65,6 +78,10 @@ export default function CreateSessionPage() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       navigate('/sessions');
     },
+    onError: (error) => {
+      console.error('세션 생성 중 오류:', error);
+      alert('세션 생성에 실패했습니다. 콘솔을 확인해주세요.');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -73,7 +90,6 @@ export default function CreateSessionPage() {
     const data: CreateSessionDto = {
       sessionName,
       mcName,
-      totalParticipants,
       teamAName,
       teamBName,
     };
@@ -137,19 +153,6 @@ export default function CreateSessionPage() {
                 placeholder="예: 김진행"
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                총 참가자 수
-              </label>
-              <input
-                type="number"
-                value={totalParticipants}
-                onChange={(e) => setTotalParticipants(parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="2"
-              />
-            </div>
           </div>
         </div>
 
@@ -170,7 +173,7 @@ export default function CreateSessionPage() {
               />
             </div>
             <h3 className="text-lg font-semibold mb-4 text-blue-600">
-              참가자
+              참가자 (남성)
             </h3>
             <div className="space-y-2">
               {teamAParticipants.map((name, index) => (
@@ -208,7 +211,7 @@ export default function CreateSessionPage() {
               />
             </div>
             <h3 className="text-lg font-semibold mb-4 text-pink-600">
-              참가자
+              참가자 (여성)
             </h3>
             <div className="space-y-2">
               {teamBParticipants.map((name, index) => (

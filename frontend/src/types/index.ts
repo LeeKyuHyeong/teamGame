@@ -1,12 +1,9 @@
-import type { ReactNode } from "react";
-
 export interface Session {
   id: number;
   sessionName: string;
   sessionDate: string;
   mcName: string;
   status: string;
-  totalParticipants: number;
   createdAt: string;
   updatedAt: string;
   teams?: Team[];
@@ -17,7 +14,6 @@ export interface Team {
   id: number;
   sessionId: number;
   teamName: string;
-  teamType: string;
   totalScore: number;
   createdAt: string;
   participants?: Participant[];
@@ -100,7 +96,6 @@ export interface SpeedCategory {
 }
 
 export interface SpeedItem {
-  [x: string]: ReactNode;
   id: number;
   categoryId: number;
   itemName: string;
@@ -117,14 +112,8 @@ export interface CreateSessionDto {
   sessionName: string;
   mcName: string;
   sessionDate?: string;
-  totalParticipants?: number;
   teamAName?: string;
   teamBName?: string;
-}
-
-export interface CreateSpeedCategoryDto {
-  categoryName: string;
-  description?: string;
 }
 
 export interface UpdateSessionDto {
@@ -136,7 +125,6 @@ export interface UpdateSessionDto {
 export interface CreateTeamDto {
   sessionId: number;
   teamName: string;
-  teamType: string;
 }
 
 export interface CreateParticipantDto {

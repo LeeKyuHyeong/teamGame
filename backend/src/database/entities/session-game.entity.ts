@@ -19,13 +19,13 @@ export enum GameStatus {
 
 @Entity('session_games')
 export class SessionGame {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
-  @Column({ type: 'bigint', name: 'session_id' })
+  @Column({ type: 'int', name: 'session_id' })
   sessionId: number;
 
-  @Column({ type: 'bigint', name: 'game_type_id' })
+  @Column({ type: 'int', name: 'game_type_id' })
   gameTypeId: number;
 
   @Column({ type: 'int', name: 'game_order' })

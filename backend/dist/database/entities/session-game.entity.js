@@ -33,15 +33,15 @@ let SessionGame = class SessionGame {
 };
 exports.SessionGame = SessionGame;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], SessionGame.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'session_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'session_id' }),
     __metadata("design:type", Number)
 ], SessionGame.prototype, "sessionId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'bigint', name: 'game_type_id' }),
+    (0, typeorm_1.Column)({ type: 'int', name: 'game_type_id' }),
     __metadata("design:type", Number)
 ], SessionGame.prototype, "gameTypeId", void 0);
 __decorate([

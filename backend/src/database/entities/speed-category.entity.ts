@@ -10,7 +10,7 @@ import { SpeedItem } from './speed-item.entity';
 
 @Entity('speed_categories')
 export class SpeedCategory {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 100, name: 'category_name' })

@@ -20,7 +20,7 @@ let ActionItem = class ActionItem {
 };
 exports.ActionItem = ActionItem;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], ActionItem.prototype, "id", void 0);
 __decorate([

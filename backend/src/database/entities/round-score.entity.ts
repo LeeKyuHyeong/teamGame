@@ -5,25 +5,23 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-  Unique,
 } from 'typeorm';
 import { GameRound } from './game-round.entity';
 import { Team } from './team.entity';
 import { Participant } from './participant.entity';
 
 @Entity('round_scores')
-@Unique(['roundId', 'teamId'])
 export class RoundScore {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
-  @Column({ type: 'bigint', name: 'round_id' })
+  @Column({ type: 'int', name: 'round_id' })
   roundId: number;
 
-  @Column({ type: 'bigint', name: 'team_id' })
+  @Column({ type: 'int', name: 'team_id' })
   teamId: number;
 
-  @Column({ type: 'bigint', name: 'participant_id', nullable: true })
+  @Column({ type: 'int', name: 'participant_id', nullable: true })
   participantId: number;
 
   @Column({ type: 'int', default: 0 })

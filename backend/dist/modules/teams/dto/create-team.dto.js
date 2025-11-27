@@ -11,11 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTeamDto = void 0;
 const class_validator_1 = require("class-validator");
-const team_entity_1 = require("../../../database/entities/team.entity");
 class CreateTeamDto {
     sessionId;
     teamName;
-    teamType;
 }
 exports.CreateTeamDto = CreateTeamDto;
 __decorate([
@@ -26,8 +24,4 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateTeamDto.prototype, "teamName", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(team_entity_1.TeamType),
-    __metadata("design:type", String)
-], CreateTeamDto.prototype, "teamType", void 0);
 //# sourceMappingURL=create-team.dto.js.map

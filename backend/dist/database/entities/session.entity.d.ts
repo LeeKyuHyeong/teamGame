@@ -11,7 +11,6 @@ export declare class Session {
     sessionDate: Date;
     mcName: string;
     status: SessionStatus;
-    totalParticipants: number;
     createdAt: Date;
     updatedAt: Date;
     teams: Team[];

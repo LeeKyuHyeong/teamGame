@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Session, SessionStatus } from '../../database/entities/session.entity';
+import { Team } from '../../database/entities/team.entity';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
@@ -11,6 +12,8 @@ export class SessionsService {
   constructor(
     @InjectRepository(Session)
     private readonly sessionRepository: Repository<Session>,
+    @InjectRepository(Team)
+    private readonly teamRepository: Repository<Team>,
   ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Session> {
@@ -18,7 +21,28 @@ export class SessionsService {
       ...createSessionDto,
       status: SessionStatus.READY,
     });
-    return await this.sessionRepository.save(session);
+    const savedSession = await this.sessionRepository.save(session);
+
+    // 팀 자동 생성
+    const teamAName = createSessionDto.teamAName || 'A팀';
+    const teamBName = createSessionDto.teamBName || 'B팀';
+
+    const teamA = this.teamRepository.create({
+      sessionId: savedSession.id,
+      teamName: teamAName,
+      totalScore: 0,
+    });
+
+    const teamB = this.teamRepository.create({
+      sessionId: savedSession.id,
+      teamName: teamBName,
+      totalScore: 0,
+    });
+
+    await this.teamRepository.save([teamA, teamB]);
+
+    // 팀 정보 포함하여 반환
+    return await this.findOne(savedSession.id);
   }
 
   async findAll(): Promise<Session[]> {
@@ -29,6 +53,7 @@ export class SessionsService {
   }
 
   async findOne(id: number): Promise<Session> {
+    console.log(`[SessionsService] findOne 호출 - ID: ${id}`);
     
     const session = await this.sessionRepository.findOne({
       where: { id },
@@ -39,11 +64,15 @@ export class SessionsService {
       throw new NotFoundException(`Session with ID ${id} not found`);
     }
 
+    console.log(`[SessionsService] 세션 조회 성공:`);
+    console.log(`  - sessionName: ${session.sessionName}`);
+    console.log(`  - teams 개수: ${session.teams?.length || 0}`);
     if (session.teams && session.teams.length > 0) {
-      session.teams.forEach((team, index) => {        
+      session.teams.forEach((team, index) => {
+        console.log(`  - Team ${index}: ${team.teamName}, participants: ${team.participants?.length || 0}개`);
       });
     } else {
-      // console.log(`  ⚠️ teams가 비어있음!`);
+      console.log(`  ⚠️ teams가 비어있음!`);
     }
 
     return session;
@@ -78,13 +107,11 @@ export class SessionsService {
       sessionDate: session.sessionDate,
       mcName: session.mcName,
       status: session.status,
-      totalParticipants: session.totalParticipants,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
       teams: session.teams?.map((team) => ({
         id: team.id,
         teamName: team.teamName,
-        teamType: team.teamType,
         totalScore: team.totalScore,
         participantCount: team.participants?.length || 0,
       })),

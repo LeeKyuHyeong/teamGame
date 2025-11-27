@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsDateString, Min } from 'class-validator';
+import { IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateSessionDto {
   @IsString()
@@ -11,11 +11,6 @@ export class CreateSessionDto {
   @IsOptional()
   @IsString()
   mcName?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  totalParticipants?: number;
 
   @IsOptional()
   @IsString()

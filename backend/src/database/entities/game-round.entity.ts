@@ -12,7 +12,7 @@ import { RoundScore } from './round-score.entity';
 
 @Entity('game_rounds')
 export class GameRound {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'bigint', name: 'session_game_id' })

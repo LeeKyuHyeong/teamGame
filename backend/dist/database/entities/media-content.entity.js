@@ -27,7 +27,7 @@ let MediaContent = class MediaContent {
 };
 exports.MediaContent = MediaContent;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], MediaContent.prototype, "id", void 0);
 __decorate([

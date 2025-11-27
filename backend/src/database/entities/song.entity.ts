@@ -8,7 +8,7 @@ import {
 
 @Entity('songs')
 export class Song {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 255, name: 'youtube_url' })

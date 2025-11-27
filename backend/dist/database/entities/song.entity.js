@@ -22,7 +22,7 @@ let Song = class Song {
 };
 exports.Song = Song;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'bigint' }),
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment', { type: 'int' }),
     __metadata("design:type", Number)
 ], Song.prototype, "id", void 0);
 __decorate([

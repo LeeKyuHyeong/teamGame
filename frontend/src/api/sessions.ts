@@ -22,7 +22,9 @@ export const sessionsApi = {
 
   // 세션 생성
   create: async (data: CreateSessionDto): Promise<Session> => {
+    console.log('세션생성!');
     const response = await apiClient.post<Session>('/sessions', data);
+    console.log('세션생성 완료! : ' + response.data);
     return response.data;
   },
 

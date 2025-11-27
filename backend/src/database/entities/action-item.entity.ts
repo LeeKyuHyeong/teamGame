@@ -8,7 +8,7 @@ import {
 
 @Entity('action_items')
 export class ActionItem {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('increment', { type: 'int' })
   id: number;
 
   @Column({ type: 'varchar', length: 100, name: 'action_name' })
