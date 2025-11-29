@@ -78,6 +78,7 @@ export interface Song {
   startTime: number;
   title: string;
   artist: string;
+  releaseYear: string;
   createdAt: string;
 }
 
@@ -86,6 +87,7 @@ export interface CreateSongDto {
   startTime: number;
   title: string;
   artist: string;
+  releaseYear: string;
 }
 
 export interface MediaContent {

@@ -16,6 +16,7 @@ let Song = class Song {
     youtubeUrl;
     title;
     artist;
+    releaseYear;
     startTime;
     createdAt;
     updatedAt;
@@ -37,6 +38,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100 }),
     __metadata("design:type", String)
 ], Song.prototype, "artist", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 10 }),
+    __metadata("design:type", String)
+], Song.prototype, "releaseYear", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'int', nullable: true, name: 'start_time' }),
     __metadata("design:type", Number)

@@ -10,6 +10,9 @@ export class CreateSongDto {
   @IsString()
   artist: string;
 
+  @IsString()
+  releaseYear: string;
+
   @IsOptional()
   @IsInt()
   @Min(0)

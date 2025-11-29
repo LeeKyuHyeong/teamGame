@@ -11,6 +11,7 @@ export default function SongsManager() {
     youtubeUrl: '',
     title: '',
     artist: '',
+    releaseYear: '',
     startTime: 0,
   });
 
@@ -44,7 +45,7 @@ export default function SongsManager() {
   });
 
   const resetForm = () => {
-    setFormData({ youtubeUrl: '', title: '', artist: '', startTime: 0 });
+    setFormData({ youtubeUrl: '', title: '', artist: '', releaseYear:'', startTime: 0 });
     setEditingSong(null);
     setShowForm(false);
   };
@@ -64,6 +65,7 @@ export default function SongsManager() {
       youtubeUrl: song.youtubeUrl,
       title: song.title,
       artist: song.artist,
+      releaseYear: song.releaseYear,
       startTime: song.startTime || 0,
     });
     setShowForm(true);
@@ -134,6 +136,20 @@ export default function SongsManager() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                연도 *
+              </label>
+              <input
+                type="text"
+                value={formData.releaseYear}
+                onChange={(e) =>
+                  setFormData({ ...formData, releaseYear: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 시작 시간 (초)
               </label>
               <input
@@ -176,6 +192,7 @@ export default function SongsManager() {
             <div className="flex-1">
               <h3 className="font-semibold text-lg">{song.title}</h3>
               <p className="text-sm text-gray-600">{song.artist}</p>
+              <p className="text-sm text-gray-600">{song.releaseYear}</p>
               <a
                 href={song.youtubeUrl}
                 target="_blank"

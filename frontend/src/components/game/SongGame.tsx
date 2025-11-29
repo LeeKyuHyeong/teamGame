@@ -89,6 +89,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
           console.log('content.youtubeUrl:', song.youtubeUrl);
           console.log('content.title:', song.title);
           console.log('content.artist:', song.artist);
+          console.log('content.releaseYear:', song.releaseYear);
         }
       }
     }
@@ -458,6 +459,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
             <p className="text-5xl font-bold mb-4">정답!</p>
             <p className="text-3xl mb-2">{song.title}</p>
             <p className="text-2xl text-green-300 mb-4">{song.artist}</p>
+            <p className="text-2xl text-green-300 mb-4">{song.releaseYear}</p>
             <p className="text-xl">
               🎉 <span className="font-bold">{winner.participantName}</span>님이 맞췄습니다!
             </p>

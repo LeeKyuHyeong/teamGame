@@ -3,6 +3,7 @@ export declare class Song {
     youtubeUrl: string;
     title: string;
     artist: string;
+    releaseYear: string;
     startTime: number;
     createdAt: Date;
     updatedAt: Date;
