@@ -208,7 +208,7 @@ export default function MediaGame({ game, session: sessionProp }: Props) {
             <img
               src={`http://localhost:3000${media.imageUrl}`}
               alt="장면"
-              className="max-w-full max-h-96 rounded-lg shadow-lg"
+              className="max-w-full max-h-124 rounded-lg shadow-lg"
               onError={(e) => {
                 e.currentTarget.src = 'https://via.placeholder.com/800x450?text=Image+Not+Found';
               }}

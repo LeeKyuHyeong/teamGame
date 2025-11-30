@@ -173,7 +173,7 @@ export default function CreateSessionPage() {
               />
             </div>
             <h3 className="text-lg font-semibold mb-4 text-blue-600">
-              참가자 (남성)
+              참가자
             </h3>
             <div className="space-y-2">
               {teamAParticipants.map((name, index) => (
@@ -211,7 +211,7 @@ export default function CreateSessionPage() {
               />
             </div>
             <h3 className="text-lg font-semibold mb-4 text-pink-600">
-              참가자 (여성)
+              참가자
             </h3>
             <div className="space-y-2">
               {teamBParticipants.map((name, index) => (
