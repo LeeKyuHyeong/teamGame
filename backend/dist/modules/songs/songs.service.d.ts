@@ -9,5 +9,6 @@ export declare class SongsService {
     findOne(id: number): Promise<Song>;
     update(id: number, updateSongDto: Partial<CreateSongDto>): Promise<Song>;
     remove(id: number): Promise<void>;
-    getRandom(count?: number): Promise<Song[]>;
+    getRandom(count?: number, releaseYear?: String): Promise<Song[]>;
+    getAvailableYears(): Promise<String[]>;
 }

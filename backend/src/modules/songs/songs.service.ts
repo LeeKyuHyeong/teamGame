@@ -46,12 +46,32 @@ export class SongsService {
   }
 
   // 랜덤 노래 가져오기
-  async getRandom(count: number = 5): Promise<Song[]> {
-    const songs = await this.songRepository
-      .createQueryBuilder('song')
+  async getRandom(count: number = 5, releaseYear?: String): Promise<Song[]> {
+    const queryBuilder = this.songRepository
+      .createQueryBuilder('song');
+    
+    // 연도 필터 추가
+    if (releaseYear) {
+      queryBuilder.where('song.release_year = :releaseYear', { releaseYear });
+    }
+    
+    const songs = await queryBuilder
       .orderBy('RAND()')
       .limit(count)
       .getMany();
+      
     return songs;
+  }
+
+  // 사용 가능한 연도 목록 가져오기
+  async getAvailableYears(): Promise<String[]> {
+    const result = await this.songRepository
+      .createQueryBuilder('song')
+      .select('DISTINCT song.release_year', 'year')
+      .where('song.release_year IS NOT NULL')
+      .orderBy('song.release_year', 'DESC')
+      .getRawMany();
+    
+    return result.map(r => r.year);
   }
 }

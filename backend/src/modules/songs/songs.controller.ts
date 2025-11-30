@@ -24,10 +24,11 @@ export class SongsController {
   }
 
   @Get()
-  findAll(@Query('random') random?: string) {
+  findAll(@Query('random') random?: string, @Query('year') year?: string) {
     if (random) {
       const count = parseInt(random) || 5;
-      return this.songsService.getRandom(count);
+      const releaseYear = year;
+      return this.songsService.getRandom(count, releaseYear);
     }
     return this.songsService.findAll();
   }

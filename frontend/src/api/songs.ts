@@ -9,10 +9,18 @@ export const songsApi = {
   },
 
   // 랜덤 노래
-  getRandom: async (count: number = 5): Promise<Song[]> => {
-    const response = await apiClient.get<Song[]>('/songs', {
-      params: { random: count },
-    });
+  getRandom: async (count: number = 5, year?: number): Promise<Song[]> => {
+    const params: any = { random: count };
+    if (year) {
+      params.year = year;
+    }
+    const response = await apiClient.get<Song[]>('/songs', { params });
+    return response.data;
+  },
+
+  // 사용 가능한 연도 목록
+  getAvailableYears: async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/songs/years/available');
     return response.data;
   },
 

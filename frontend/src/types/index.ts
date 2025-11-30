@@ -75,7 +75,6 @@ export interface RoundScore {
 export interface Song {
   id: number;
   youtubeUrl: string;
-  startTime: number;
   title: string;
   artist: string;
   releaseYear: string;
@@ -84,7 +83,6 @@ export interface Song {
 
 export interface CreateSongDto {
   youtubeUrl: string;
-  startTime: number;
   title: string;
   artist: string;
   releaseYear: string;
@@ -136,6 +134,7 @@ export interface CreateSessionGameDto {
 export interface StartGameDto {
   contentIds?: number[];
   roundCount?: number;
+  releaseYear: string;
 }
 
 // 타입 가드 헬퍼 함수

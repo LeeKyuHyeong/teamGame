@@ -24,10 +24,11 @@ let SongsController = class SongsController {
     create(createSongDto) {
         return this.songsService.create(createSongDto);
     }
-    findAll(random) {
+    findAll(random, year) {
         if (random) {
             const count = parseInt(random) || 5;
-            return this.songsService.getRandom(count);
+            const releaseYear = year;
+            return this.songsService.getRandom(count, releaseYear);
         }
         return this.songsService.findAll();
     }
@@ -53,8 +54,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('random')),
+    __param(1, (0, common_1.Query)('year')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], SongsController.prototype, "findAll", null);
 __decorate([

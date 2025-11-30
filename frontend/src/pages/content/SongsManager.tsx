@@ -12,7 +12,6 @@ export default function SongsManager() {
     title: '',
     artist: '',
     releaseYear: '',
-    startTime: 0,
   });
 
   const { data: songs, isLoading } = useQuery<Song[]>({
@@ -45,7 +44,7 @@ export default function SongsManager() {
   });
 
   const resetForm = () => {
-    setFormData({ youtubeUrl: '', title: '', artist: '', releaseYear:'', startTime: 0 });
+    setFormData({ youtubeUrl: '', title: '', artist: '', releaseYear: '' });
     setEditingSong(null);
     setShowForm(false);
   };
@@ -66,7 +65,6 @@ export default function SongsManager() {
       title: song.title,
       artist: song.artist,
       releaseYear: song.releaseYear,
-      startTime: song.startTime || 0,
     });
     setShowForm(true);
   };
@@ -136,30 +134,18 @@ export default function SongsManager() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                연도 *
-              </label>
-              <input
-                type="text"
-                value={formData.releaseYear}
-                onChange={(e) =>
-                  setFormData({ ...formData, releaseYear: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                시작 시간 (초)
+                발매 연도
               </label>
               <input
                 type="number"
-                value={formData.startTime}
+                value={formData.releaseYear || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, startTime: parseInt(e.target.value) })
+                  setFormData({ ...formData, releaseYear: e.target.value})
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                min="0"
+                min="1900"
+                max="2100"
+                placeholder="예: 2024"
               />
             </div>
           </div>
@@ -191,8 +177,12 @@ export default function SongsManager() {
           >
             <div className="flex-1">
               <h3 className="font-semibold text-lg">{song.title}</h3>
-              <p className="text-sm text-gray-600">{song.artist}</p>
-              <p className="text-sm text-gray-600">{song.releaseYear}</p>
+              <p className="text-sm text-gray-600">
+                {song.artist}
+                {song.releaseYear && (
+                  <span className="ml-2 text-gray-400">({song.releaseYear})</span>
+                )}
+              </p>
               <a
                 href={song.youtubeUrl}
                 target="_blank"

@@ -49,13 +49,26 @@ let SongsService = class SongsService {
         const song = await this.findOne(id);
         await this.songRepository.remove(song);
     }
-    async getRandom(count = 5) {
-        const songs = await this.songRepository
-            .createQueryBuilder('song')
+    async getRandom(count = 5, releaseYear) {
+        const queryBuilder = this.songRepository
+            .createQueryBuilder('song');
+        if (releaseYear) {
+            queryBuilder.where('song.release_year = :releaseYear', { releaseYear });
+        }
+        const songs = await queryBuilder
             .orderBy('RAND()')
             .limit(count)
             .getMany();
         return songs;
+    }
+    async getAvailableYears() {
+        const result = await this.songRepository
+            .createQueryBuilder('song')
+            .select('DISTINCT song.release_year', 'year')
+            .where('song.release_year IS NOT NULL')
+            .orderBy('song.release_year', 'DESC')
+            .getRawMany();
+        return result.map(r => r.year);
     }
 };
 exports.SongsService = SongsService;
