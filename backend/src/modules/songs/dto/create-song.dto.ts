@@ -10,8 +10,8 @@ export class CreateSongDto {
   @IsString()
   artist: string;
 
-  @IsString()
-  releaseYear: string;
+  @IsInt()
+  releaseYear: number;
 
   @IsOptional()
   @IsInt()

@@ -197,13 +197,12 @@ export default function SongGame({ game, session: sessionProp }: Props) {
           width: '1',
           videoId: videoId,
           playerVars: {
-            start: song.startTime || 0,
             controls: 0,
             autoplay: 0,
           },
           events: {
             onReady: (_event: any) => {
-              console.log('✅ 플레이어 준비 완료, 시작시간:', song.startTime || 0);
+              console.log('✅ 플레이어 준비 완료');
             },
             onStateChange: (event: any) => {
               console.log('플레이어 상태 변경:', event.data);
@@ -457,9 +456,13 @@ export default function SongGame({ game, session: sessionProp }: Props) {
         {answered && winner ? (
           <div className="bg-green-900 p-8 rounded-lg mb-8 text-center animate-pulse">
             <p className="text-5xl font-bold mb-4">정답!</p>
+            {song.releaseYear && (
+              <p className="text-lg text-green-200">
+                {song.releaseYear}년
+              </p>
+            )}
             <p className="text-3xl mb-2">{song.title}</p>
             <p className="text-2xl text-green-300 mb-4">{song.artist}</p>
-            <p className="text-2xl text-green-300 mb-4">{song.releaseYear}</p>
             <p className="text-xl">
               🎉 <span className="font-bold">{winner.participantName}</span>님이 맞췄습니다!
             </p>

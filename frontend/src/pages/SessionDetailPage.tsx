@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { sessionsApi, gamesApi, songsApi, mediaApi } from '../api';
-import type { Session, Song, MediaContent} from '../types';
+import type { Session, Song, MediaContent, DecadeOption} from '../types';
 
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,19 +12,19 @@ export default function SessionDetailPage() {
   const [showGameSelect, setShowGameSelect] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState<string>('');
   const [roundCount, setRoundCount] = useState<number>(5);
-  const [selectedYear, setSelectedYear] = useState<string>('파악중');
+  const [selectedDecade, setSelectedDecade] = useState<string | undefined>(undefined);
 
   const { data: session, isLoading, error } = useQuery<Session>({
     queryKey: ['sessions', sessionId],
     queryFn: () => sessionsApi.getOne(sessionId),
   });
 
-  // 사용 가능한 연도 목록 조회
-  const { data: availableYears } = useQuery<string[]>({
-    queryKey: ['songs', 'years'],
-    queryFn: songsApi.getAvailableYears,
-    enabled: selectedGameType === 'SONG',
-  });
+  // 사용 가능한 년대 목록 조회
+const { data: availableDecades } = useQuery<DecadeOption[]>({
+  queryKey: ['songs', 'decades'],
+  queryFn: songsApi.getAvailableDecades,
+  enabled: selectedGameType === 'SONG',
+});
 
   // 노래 전체 개수 조회
   const { data: songs } = useQuery<Song[]>({
@@ -43,19 +43,30 @@ export default function SessionDetailPage() {
   // 최대 라운드 수 설정
   useEffect(() => {
     if (selectedGameType === 'SONG' && songs) {
-      // 연도 선택된 경우 해당 연도의 노래 개수로 제한
-      const filteredCount = selectedYear 
-        ? songs.filter(s => s.releaseYear === selectedYear).length 
+      // 년대 선택된 경우 해당 년대의 노래 개수로 제한
+      const filteredCount = selectedDecade 
+        ? songs.filter(s => {
+            const year = s.releaseYear;
+            if (!year) return false;
+            
+            switch(selectedDecade) {
+              case '1990s': return year >= 1990 && year <= 1999;
+              case '2000s': return year >= 2000 && year <= 2009;
+              case '2010s': return year >= 2010 && year <= 2019;
+              case '2020s': return year >= 2020 && year <= 2029;
+              default: return true;
+            }
+          }).length 
         : songs.length;
       setRoundCount(Math.min(5, filteredCount));
     } else if (selectedGameType === 'MEDIA' && mediaList) {
       setRoundCount(Math.min(5, mediaList.length));
     }
-  }, [selectedGameType, songs, mediaList, selectedYear]);
+  }, [selectedGameType, songs, mediaList, selectedDecade]);
 
   const handleGameSelect = (gameCode: string) => {
     setSelectedGameType(gameCode);
-    setSelectedYear(''); // 게임 타입 변경 시 연도 초기화
+    setSelectedDecade(undefined); // 게임 타입 변경 시 년대 초기화
     setShowGameSelect(true);
   };
 
@@ -96,7 +107,7 @@ export default function SessionDetailPage() {
      
       await gamesApi.start(game.id, { 
         roundCount,
-        releaseYear: selectedYear 
+        decade: selectedDecade 
       });
       navigate(`/sessions/${sessionId}/games/${game.id}`);
     } catch (error) {
@@ -280,9 +291,10 @@ export default function SessionDetailPage() {
                     <div className="mb-6">
                       <p className="text-gray-600 mb-2">
                         등록된 노래: <span className="font-bold text-blue-600">{songs?.length || 0}곡</span>
-                        {selectedYear && (
+                        {selectedDecade && availableDecades && (
                           <span className="ml-2 text-sm text-gray-500">
-                            ({selectedYear}년: {songs?.filter(s => s.releaseYear === selectedYear).length}곡)
+                            ({availableDecades.find(d => d.decade === selectedDecade)?.label}: 
+                            {availableDecades.find(d => d.decade === selectedDecade)?.count}곡)
                           </span>
                         )}
                       </p>
@@ -293,22 +305,22 @@ export default function SessionDetailPage() {
 
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        발매 연도 선택
+                        발매 년대 선택
                       </label>
                       <select
-                        value={selectedYear || ''}
-                        onChange={(e) => setSelectedYear(e.target.value )}
+                        value={selectedDecade || ''}
+                        onChange={(e) => setSelectedDecade(e.target.value || undefined)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
                       >
-                        <option value="">전체 연도</option>
-                        {availableYears?.map(year => (
-                          <option key={year} value={year}>
-                            {year}년 ({songs?.filter(s => s.releaseYear === year).length}곡)
+                        <option value="">전체 년대</option>
+                        {availableDecades?.map(option => (
+                          <option key={option.decade} value={option.decade}>
+                            {option.label} ({option.count}곡)
                           </option>
                         ))}
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
-                        특정 연도의 노래만 선택하거나 전체 연도에서 랜덤으로 선택할 수 있습니다
+                        1990년대, 2000년대, 2010년대, 2020년대 중 선택하거나 전체 년대에서 랜덤으로 선택할 수 있습니다
                       </p>
                     </div>
 
@@ -321,15 +333,15 @@ export default function SessionDetailPage() {
                         value={roundCount}
                         onChange={(e) => setRoundCount(parseInt(e.target.value) || 1)}
                         min={1}
-                        max={selectedYear 
-                          ? songs?.filter(s => s.releaseYear === selectedYear).length || 1
+                        max={selectedDecade 
+                          ? availableDecades?.find(d => d.decade === selectedDecade)?.count || 1
                           : songs?.length || 1
                         }
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        1 ~ {selectedYear 
-                          ? songs?.filter(s => s.releaseYear === selectedYear).length || 0
+                        1 ~ {selectedDecade 
+                          ? availableDecades?.find(d => d.decade === selectedDecade)?.count || 0
                           : songs?.length || 0
                         } 사이의 숫자를 입력하세요
                       </p>
@@ -351,7 +363,7 @@ export default function SessionDetailPage() {
                         onClick={() => {
                           setShowGameSelect(false);
                           setSelectedGameType('');
-                          setSelectedYear('');
+                          setSelectedDecade(undefined);
                         }}
                         className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                       >

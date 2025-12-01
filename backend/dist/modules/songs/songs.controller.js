@@ -24,15 +24,22 @@ let SongsController = class SongsController {
     create(createSongDto) {
         return this.songsService.create(createSongDto);
     }
-    findAll(random, year) {
+    async getAvailableDecades() {
+        console.log('[SongsController] GET /songs/decades/available 호출됨');
+        const result = await this.songsService.getAvailableDecades();
+        console.log('[SongsController] 반환 결과:', result);
+        return result;
+    }
+    findAll(random, decade) {
+        console.log('[SongsController] GET /songs 호출됨, random:', random, 'decade:', decade);
         if (random) {
             const count = parseInt(random) || 5;
-            const releaseYear = year;
-            return this.songsService.getRandom(count, releaseYear);
+            return this.songsService.getRandom(count, decade);
         }
         return this.songsService.findAll();
     }
     findOne(id) {
+        console.log('[SongsController] GET /songs/:id 호출됨, id:', id);
         return this.songsService.findOne(+id);
     }
     update(id, updateSongDto) {
@@ -52,9 +59,15 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SongsController.prototype, "create", null);
 __decorate([
+    (0, common_1.Get)('decades/available'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SongsController.prototype, "getAvailableDecades", null);
+__decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('random')),
-    __param(1, (0, common_1.Query)('year')),
+    __param(1, (0, common_1.Query)('decade')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)

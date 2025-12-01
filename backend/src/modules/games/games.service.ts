@@ -89,18 +89,51 @@ export class GamesService {
     // 기존 로직 (노래, 드라마)
     if (startGameDto.roundCount) {
       if (game.gameType.gameCode === 'SONG') {
-        const allSongs = await this.songRepository.find();
-        
-        if (allSongs.length < startGameDto.roundCount) {
-          throw new BadRequestException(
-            `Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}`
-          );
-        }
+  let allSongs = await this.songRepository.find();
+  
+  // 년대 필터 적용
+  if (startGameDto.decade) {
+    let startYear: number;
+    let endYear: number;
+    
+    switch(startGameDto.decade) {
+      case '1990s':
+        startYear = 1990;
+        endYear = 1999;
+        break;
+    case '2000s':
+        startYear = 2000;
+        endYear = 2009;
+        break;
+      case '2010s':
+        startYear = 2010;
+        endYear = 2019;
+        break;
+      case '2020s':
+        startYear = 2020;
+        endYear = 2029;
+        break;
+      default:
+        startYear = 1900;
+        endYear = 2100;
+    }
+    
+    allSongs = allSongs.filter(song => 
+      song.releaseYear >= startYear && song.releaseYear <= endYear
+    );
+    console.log(`  - ${startGameDto.decade} 노래 필터링: ${allSongs.length}곡`);
+  }
+  
+  if (allSongs.length < startGameDto.roundCount) {
+    throw new BadRequestException(
+      `Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}${startGameDto.decade ? ` (${startGameDto.decade})` : ''}`
+    );
+  }
 
-        const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
-        contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
-        console.log('  - 선택된 노래 IDs:', contentIds);
-      } else if (game.gameType.gameCode === 'MEDIA') {
+  const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
+  contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);
+  console.log('  - 선택된 노래 IDs:', contentIds);
+} else if (game.gameType.gameCode === 'MEDIA') {
         const allMedia = await this.mediaRepository.find();
         console.log('  - 전체 미디어 개수:', allMedia.length);
         console.log('  - 요청 라운드 수:', startGameDto.roundCount);

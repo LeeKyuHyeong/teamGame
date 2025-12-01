@@ -81,9 +81,36 @@ let GamesService = class GamesService {
         const teamRounds = [];
         if (startGameDto.roundCount) {
             if (game.gameType.gameCode === 'SONG') {
-                const allSongs = await this.songRepository.find();
+                let allSongs = await this.songRepository.find();
+                if (startGameDto.decade) {
+                    let startYear;
+                    let endYear;
+                    switch (startGameDto.decade) {
+                        case '1990s':
+                            startYear = 1990;
+                            endYear = 1999;
+                            break;
+                        case '2000s':
+                            startYear = 2000;
+                            endYear = 2009;
+                            break;
+                        case '2010s':
+                            startYear = 2010;
+                            endYear = 2019;
+                            break;
+                        case '2020s':
+                            startYear = 2020;
+                            endYear = 2029;
+                            break;
+                        default:
+                            startYear = 1900;
+                            endYear = 2100;
+                    }
+                    allSongs = allSongs.filter(song => song.releaseYear >= startYear && song.releaseYear <= endYear);
+                    console.log(`  - ${startGameDto.decade} 노래 필터링: ${allSongs.length}곡`);
+                }
                 if (allSongs.length < startGameDto.roundCount) {
-                    throw new common_1.BadRequestException(`Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}`);
+                    throw new common_1.BadRequestException(`Not enough songs. Requested: ${startGameDto.roundCount}, Available: ${allSongs.length}${startGameDto.decade ? ` (${startGameDto.decade})` : ''}`);
                 }
                 const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
                 contentIds = shuffled.slice(0, startGameDto.roundCount).map(song => song.id);

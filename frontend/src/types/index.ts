@@ -77,7 +77,7 @@ export interface Song {
   youtubeUrl: string;
   title: string;
   artist: string;
-  releaseYear: string;
+  releaseYear?: number;
   createdAt: string;
 }
 
@@ -85,7 +85,7 @@ export interface CreateSongDto {
   youtubeUrl: string;
   title: string;
   artist: string;
-  releaseYear: string;
+  releaseYear?: number;
 }
 
 export interface MediaContent {
@@ -134,7 +134,13 @@ export interface CreateSessionGameDto {
 export interface StartGameDto {
   contentIds?: number[];
   roundCount?: number;
-  releaseYear: string;
+  decade?: string; // '1990s' | '2000s' | '2010s' | '2020s'
+}
+
+export interface DecadeOption {
+  decade: string;
+  label: string;
+  count: number;
 }
 
 // 타입 가드 헬퍼 함수

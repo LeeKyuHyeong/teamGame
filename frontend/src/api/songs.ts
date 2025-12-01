@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Song, CreateSongDto } from '../types';
+import type { Song, CreateSongDto, DecadeOption } from '../types';
 
 export const songsApi = {
   // 노래 목록
@@ -8,19 +8,19 @@ export const songsApi = {
     return response.data;
   },
 
-  // 랜덤 노래
-  getRandom: async (count: number = 5, year?: number): Promise<Song[]> => {
+  // 랜덤 노래 (년대별)
+  getRandom: async (count: number = 5, decade?: string): Promise<Song[]> => {
     const params: any = { random: count };
-    if (year) {
-      params.year = year;
+    if (decade) {
+      params.decade = decade;
     }
     const response = await apiClient.get<Song[]>('/songs', { params });
     return response.data;
   },
 
-  // 사용 가능한 연도 목록
-  getAvailableYears: async (): Promise<string[]> => {
-    const response = await apiClient.get<string[]>('/songs/years/available');
+  // 사용 가능한 년대 목록
+  getAvailableDecades: async (): Promise<DecadeOption[]> => {
+    const response = await apiClient.get<DecadeOption[]>('/songs/decades/available');
     return response.data;
   },
 

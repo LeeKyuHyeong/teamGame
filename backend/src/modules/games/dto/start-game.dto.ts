@@ -1,17 +1,4 @@
-import { IsOptional, IsArray, IsInt, Min, ValidateNested, IsObject } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class TeamSpeedConfig {
-  @IsInt()
-  teamId: number;
-
-  @IsInt()
-  categoryId: number;
-
-  @IsInt()
-  @Min(1)
-  roundCount: number;
-}
+import { IsOptional, IsArray, IsInt, Min, IsString } from 'class-validator';
 
 export class StartGameDto {
   @IsOptional()
@@ -25,8 +12,6 @@ export class StartGameDto {
   roundCount?: number;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TeamSpeedConfig)
-  teamConfigs?: TeamSpeedConfig[]; // 스피드 게임용 팀별 설정
+  @IsString()
+  decade?: string; // '1990s' | '2000s' | '2010s' | '2020s'
 }

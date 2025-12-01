@@ -20,8 +20,8 @@ export class Song {
   @Column({ type: 'varchar', length: 100 })
   artist: string;
 
-  @Column({ type: 'varchar', length: 10 })
-  releaseYear: string;
+  @Column({ type: 'int', nullable: true, name: 'release_year'})
+  releaseYear: number;
 
   @Column({ type: 'int', nullable: true, name: 'start_time' })
   startTime: number;
