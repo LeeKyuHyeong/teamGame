@@ -204,11 +204,11 @@ export default function MediaGame({ game, session: sessionProp }: Props) {
 
       <div className="max-w-5xl mx-auto">
         <div className="bg-gray-800 rounded-lg p-8 mb-8">
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-6 w-full max-w-4xl h-[500px]">
             <img
               src={`http://localhost:3000${media.imageUrl}`}
               alt="장면"
-              className="max-w-full max-h-124 rounded-lg shadow-lg"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
               onError={(e) => {
                 e.currentTarget.src = 'https://via.placeholder.com/800x450?text=Image+Not+Found';
               }}
