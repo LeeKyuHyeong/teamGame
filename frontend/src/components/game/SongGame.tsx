@@ -155,6 +155,46 @@ export default function SongGame({ game, session: sessionProp }: Props) {
     return match?.[1] || '';
   };
 
+  // 에러 처리 함수
+const handlePlayerError = (event: { data: number }) => {
+    const errorCode = event.data;
+    console.error('YouTube 플레이어 에러:', errorCode);
+    
+    const errorMessages: { [key: number]: string } = {
+      2: '잘못된 동영상 ID입니다.',
+      5: 'HTML5 플레이어 에러',
+      100: '동영상을 찾을 수 없습니다.',
+      101: '임베드 재생이 허용되지 않습니다.',
+      150: '임베드 재생이 허용되지 않습니다.',
+    };
+    
+    const errorMessage = errorMessages[errorCode] || `알 수 없는 에러 (코드: ${errorCode})`;
+    
+    // 에러 150 또는 101 처리 (임베드 불가)
+    if (errorCode === 101 || errorCode === 150) {
+      setIsPlaying(false);
+      
+      alert(
+        `⚠️ 이 노래는 저작권 제한으로 재생할 수 없습니다.\n\n` +
+        `"${song?.title || '노래'}"\n\n` +
+        `3초 후 다음 라운드로 자동 이동합니다.`
+      );
+      
+      // 3초 후 다음 라운드로 자동 이동
+      setTimeout(() => {
+        if (currentRoundIndex < (rounds?.length || 0) - 1) {
+          handleNextRound();
+        } else {
+          alert('마지막 라운드입니다. 게임을 종료합니다.');
+          completeGameMutation.mutate();
+        }
+      }, 3000);
+    } else {
+      // 다른 에러는 단순 알림만
+      alert(`❌ 재생 에러: ${errorMessage}`);
+    }
+  };
+
   // 플레이어 생성
   useEffect(() => {
     console.log('=== 플레이어 생성 시도 ===');
@@ -209,6 +249,7 @@ export default function SongGame({ game, session: sessionProp }: Props) {
             },
             onError: (event: any) => {
               console.error('❌ 플레이어 에러:', event.data);
+              handlePlayerError(event);
             },
           },
         });

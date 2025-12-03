@@ -11,7 +11,7 @@ export default function SongsManager() {
     youtubeUrl: '',
     title: '',
     artist: '',
-    releaseYear: '',
+    releaseYear: 2000,
   });
 
   const { data: songs, isLoading } = useQuery<Song[]>({
@@ -44,7 +44,7 @@ export default function SongsManager() {
   });
 
   const resetForm = () => {
-    setFormData({ youtubeUrl: '', title: '', artist: '', releaseYear: '' });
+    setFormData({ youtubeUrl: '', title: '', artist: '', releaseYear: 2000 });
     setEditingSong(null);
     setShowForm(false);
   };
@@ -85,6 +85,15 @@ export default function SongsManager() {
         </button>
       </div>
 
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800">
+          ⚠️ <strong>주의:</strong> 공식 뮤직비디오는 저작권으로 재생되지 않을 수 있습니다.
+        </p>
+        <p className="text-xs text-yellow-700 mt-1">
+          💡 <strong>팁:</strong> "가사 동영상" 또는 "Audio" 영상을 사용하면 성공률이 높습니다.
+        </p>
+      </div>
+      
       {/* 추가/수정 폼 */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -140,7 +149,7 @@ export default function SongsManager() {
                 type="number"
                 value={formData.releaseYear || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, releaseYear: e.target.value})
+                  setFormData({ ...formData, releaseYear: Number(e.target.value)})
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 min="1900"
